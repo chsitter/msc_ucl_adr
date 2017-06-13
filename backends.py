@@ -117,3 +117,9 @@ class EthereumIntegration(BlockchainIntegration):
         self._op_count += 1
 
         self._event_loop.submit(_get_transaction_receipt, self._server_url, rpc_data, result_cb)
+
+
+class BitcoinIntegration(BlockchainIntegration):
+
+    def __init__(self, host, port):
+        super().__init__("Bitcoin", host, port)
