@@ -13,8 +13,10 @@ if __name__ == "__main__":
             "port": 8079,
         },
         "Bitcoin": {
+            "user": "bitcoinrpc",
+            "secret": "c8805869db20730a2ddb7f62cfa2745c",
             "host": "localhost",
-            "port": 0000,
+            "port": 18332,
         }
     }
 
@@ -22,8 +24,8 @@ if __name__ == "__main__":
     logging.info("Starting up!")
 
     s = strategy.BasicAnchoringStrategy()
-    s.register_backend(backends.EthereumIntegration(config["Ethereum"]["host"], config["Ethereum"]["port"]))
-    # s.register_backend(backends.BitcoinIntegration(config["Bitcoin"]["host"], config["Bitcoin"]["port"]))
+    # s.register_backend(backends.EthereumIntegration(config["Ethereum"]["host"], config["Ethereum"]["port"]))
+    s.register_backend(backends.BitcoinIntegration(**config["Bitcoin"]))
 
     cp = chainpoint.ChainPoint(s)
 
@@ -39,7 +41,7 @@ if __name__ == "__main__":
             print()
 
 
-    cp.anchor(["Foo", "Bar", "Baz"], print_receipts)
+    cp.anchor(["Foo", "Bar", "Baz"], lambda res: print(res))
 
     while True:
         # Sleep forever so that our workers can do their magic
