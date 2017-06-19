@@ -2,7 +2,37 @@ import concurrent.futures
 import logging
 import requests
 import json
-import bitcoin
+
+from bitcoin import from_int_to_byte, from_string_to_bytes, safe_hexlify, deserialize, serialize
+
+
+def mk_opreturn(msg, rawtx=None, json=0):
+    def op_push(data):
+        import struct
+        if len(data) < 0x4c:
+            return from_int_to_byte(len(data)) + from_string_to_bytes(data)
+        elif len(data) < 0xff:
+            return from_int_to_byte(76) + struct.pack('<B', len(data)) + from_string_to_bytes(data)
+        elif len(data) < 0xffff:
+            return from_int_to_byte(77) + struct.pack('<H', len(data)) + from_string_to_bytes(data)
+        elif len(data) < 0xffffffff:
+            return from_int_to_byte(78) + struct.pack('<I', len(data)) + from_string_to_bytes(data)
+        else:
+            raise Exception("Input data error. Rawtx must be hex chars" \
+                            + "0xffffffff > len(data) > 0")
+
+    orhex = safe_hexlify(b'\x6a' + op_push(msg))
+    orjson = {'script': orhex, 'value': 0}
+    if rawtx is not None:
+        try:
+            txo = deserialize(rawtx)
+            if not 'outs' in txo.keys(): raise Exception("OP_Return cannot be the sole output!")
+            txo['outs'].append(orjson)
+            newrawtx = serialize(txo)
+            return newrawtx
+        except:
+            raise Exception("Raw Tx Error!")
+    return orhex if not json else orjson
 
 
 def _post_request(url, data, user, secret, result_cb):
@@ -10,8 +40,8 @@ def _post_request(url, data, user, secret, result_cb):
     if res.status_code == 200:
         result_cb(res.json())
     else:
-        logging.error("Posting request failed: %s", res)
-        result_cb(None)
+        logging.error("Posting request failed: %s", res.json())
+        result_cb(None, error=res.json())
     return res
 
 
@@ -152,15 +182,18 @@ class BitcoinIntegration(BlockchainIntegration):
         def _send_raw_transaction(res):
             rpc_data = self._base_rpc_data.copy()
             rpc_data["method"] = "sendrawtransaction"
-            rpc_data["params"] = [
-                {"tx": res["result"]['hex']}
-            ]
+            rpc_data["params"] = [res["result"]['hex']]
+
             rpc_data["id"] = self._op_count  # TODO: not thread safe - but okay for now
             self._op_count += 1
             self._event_loop.submit(_post_request, self._server_url, rpc_data, self._user, self._secret,
                                     lambda res: print(res))
 
         def _sign_transaction(res):
+
+            # TODO: it's not possible to add pubkey scripts using the RPC API, so we'll have to construct the TX ourselves
+            res["result"] = mk_opreturn(data, res["result"])
+
             rpc_data = self._base_rpc_data.copy()
             rpc_data["method"] = "signrawtransaction"
             rpc_data["params"] = [
@@ -181,7 +214,10 @@ class BitcoinIntegration(BlockchainIntegration):
                 rpc_data["method"] = "createrawtransaction"
                 rpc_data["params"] = [
                     [{"txid": utxos_enough_money[0]["txid"], "vout": utxos_enough_money[0]["vout"]}],
-                    {"mqCnowcw6K24bqD4Xcio3iync1ziWXEqio": self._fee_satoshis}
+                    {
+                        "mqCnowcw6K24bqD4Xcio3iync1ziWXEqio": utxos_enough_money[0]["amount"] - (
+                            self._fee_satoshis / 1000000)
+                    }
                 ]
                 rpc_data["id"] = self._op_count  # TODO: not thread safe - but okay for now
                 self._op_count += 1
@@ -192,8 +228,6 @@ class BitcoinIntegration(BlockchainIntegration):
                 logging.error("Not enough money to pay for transaction fees")
 
         self.get_unspent_outputs(_process_unspent_outputs)
-
-        pass
 
     def get_transaction_receipt(self, transaction_hash, result_cb):
         super().get_transaction_receipt(transaction_hash, result_cb)
