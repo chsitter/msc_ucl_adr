@@ -1,4 +1,3 @@
-import concurrent.futures
 import logging
 import requests
 import json
@@ -35,14 +34,13 @@ def mk_opreturn(msg, rawtx=None, json=0):
     return orhex if not json else orjson
 
 
-def _post_request(url, data, user, secret, result_cb):
-    res = requests.post(url, json.dumps(data), auth=(user, secret))
+def _post_request(url, data, user, secret):
+    res = requests.post(url, json.dumps(data), auth=(user, secret), timeout=2.5)
     if res.status_code == 200:
-        result_cb(res.json())
+        return res.json()
     else:
         logging.error("Posting request failed: %s", res.json())
-        result_cb(None, error=res.json())
-    return res
+        return None
 
 
 def _send_transaction(url, data, result_cb):
@@ -87,20 +85,14 @@ class BlockchainIntegration:
         self._user = user
         self._secret = secret
 
-    def test_connection(self, result_cb):
+    def test_connection(self):
         logging.info("%s: Testing connection to %s:%s", self._name, self._host, self._port)
 
-    def send_transaction(self, src, dst, data, receipt_callback):
-        logging.info("%s: Sending transaction to %s -> %s", self._name, src, dst)
+    def embed(self, hexData):
+        logging.info("%s: Embedding data %s", self._name, hexData)
 
-    def get_transaction_receipt(self, transaction_hash, result_cb):
-        logging.info("%s: Getting transaction receipt for %s", self._name, transaction_hash)
-
-    def get_name(self):
-        return self._name
-
-    def __str__(self):
-        return "{} - {}:{}".format(self._name, self._host, self._port)
+    def confirm(self, tx_hash):
+        logging.info("%s: Confirming transaction %s got embedded", self._name, tx_hash)
 
 
 class EthereumIntegration(BlockchainIntegration):
@@ -109,24 +101,23 @@ class EthereumIntegration(BlockchainIntegration):
     _gas_price = 0
     _base_rpc_data = {"jsonrpc": "2.0"}
     _server_url = None
-    _event_loop = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="Ethereum_worker")
 
     def __init__(self, host, port, user, secret):
         super().__init__("Ethereum", host, port, user, secret)
         self._server_url = "http://{}:{}".format(self._host, self._port)
 
-    def test_connection(self, result_cb):
-        super().test_connection(result_cb)
+    def test_connection(self):
+        super().test_connection()
         rpc_data = self._base_rpc_data.copy()
         rpc_data["method"] = "web3_clientVersion"
         rpc_data["params"] = []
         rpc_data["id"] = self._op_count
         self._op_count += 1
 
-        return self._event_loop.submit(_post_request, self._server_url, rpc_data, result_cb)
+        return _post_request(self._server_url, rpc_data, self._user, self._secret)
 
-    def send_transaction(self, src, dst, data, result_cb):
-        super().send_transaction(src, dst, data, result_cb)
+    def embed(self, hexData):
+        super().embed(hexData)
 
         rpc_data = self._base_rpc_data.copy()
         rpc_data["method"] = "eth_sendTransaction"
@@ -136,22 +127,22 @@ class EthereumIntegration(BlockchainIntegration):
             # "gas": hex(self._gas),             #this is optional?
             # "gasPrice": hex(self._gas_price),  #this is optional?
             # "value": "0x9184e72a",             #this is optional?
-            "data": data
+            "data": hexData
         }]
         rpc_data["id"] = self._op_count
         self._op_count += 1
 
-        return self._event_loop.submit(_send_transaction, self._server_url, rpc_data, result_cb)
+        return _send_transaction(self._server_url, rpc_data)
 
-    def get_transaction_receipt(self, transaction_hash, result_cb):
-        super().get_transaction_receipt(transaction_hash, result_cb)
+    def confirm(self, tx_hash, ):
+        super().confirm(tx_hash)
         rpc_data = self._base_rpc_data.copy()
         rpc_data["method"] = "eth_getTransactionReceipt"
-        rpc_data["params"] = [transaction_hash]
+        rpc_data["params"] = [tx_hash]
         rpc_data["id"] = self._op_count
         self._op_count += 1
 
-        self._event_loop.submit(_get_transaction_receipt, self._server_url, rpc_data, result_cb)
+        _get_transaction_receipt(self._server_url, rpc_data)
 
 
 class BitcoinIntegration(BlockchainIntegration):
@@ -159,14 +150,13 @@ class BitcoinIntegration(BlockchainIntegration):
     _server_url = None
     _base_rpc_data = {"jsonrpc": "1.0"}
     _fee_satoshis = 10000  # TODO: make configurable
-    _event_loop = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="Bitcoin_worker")
 
     def __init__(self, host, port, user, secret):
         super().__init__("Bitcoin", host, port, user, secret)
         self._server_url = "http://{}:{}".format(host, port)
 
-    def test_connection(self, result_cb):
-        super().test_connection(result_cb)
+    def test_connection(self):
+        super().test_connection()
 
         rpc_data = self._base_rpc_data.copy()
 
@@ -174,10 +164,10 @@ class BitcoinIntegration(BlockchainIntegration):
         rpc_data["id"] = self._op_count
         self._op_count += 1
 
-        self._event_loop.submit(_post_request, self._server_url, rpc_data, self._user, self._secret, result_cb)
+        return _post_request(self._server_url, rpc_data, self._user, self._secret)
 
-    def send_transaction(self, src, dst, data, receipt_callback):
-        super().send_transaction(src, dst, data, receipt_callback)
+    def embed(self, src, dst, hexData):
+        super().embed(src, dst, hexData)
 
         def _send_raw_transaction(res):
             rpc_data = self._base_rpc_data.copy()
@@ -186,13 +176,12 @@ class BitcoinIntegration(BlockchainIntegration):
 
             rpc_data["id"] = self._op_count  # TODO: not thread safe - but okay for now
             self._op_count += 1
-            self._event_loop.submit(_post_request, self._server_url, rpc_data, self._user, self._secret,
-                                    lambda res: print(res))
+            return _post_request(self._server_url, rpc_data, self._user, self._secret)
 
         def _sign_transaction(res):
 
             # TODO: it's not possible to add pubkey scripts using the RPC API, so we'll have to construct the TX ourselves
-            res["result"] = mk_opreturn(data, res["result"])
+            res["result"] = mk_opreturn(hexData, res["result"])
 
             rpc_data = self._base_rpc_data.copy()
             rpc_data["method"] = "signrawtransaction"
@@ -202,8 +191,7 @@ class BitcoinIntegration(BlockchainIntegration):
             rpc_data["id"] = self._op_count  # TODO: not thread safe - but okay for now
             self._op_count += 1
 
-            self._event_loop.submit(_post_request, self._server_url, rpc_data, self._user, self._secret,
-                                    _send_raw_transaction)
+            return _post_request(self._server_url, rpc_data, self._user, self._secret)
 
         def _process_unspent_outputs(res):
             utxos_enough_money = [utxo for utxo in res["result"] if utxo["amount"] * 1000000 > self._fee_satoshis]
@@ -222,22 +210,21 @@ class BitcoinIntegration(BlockchainIntegration):
                 rpc_data["id"] = self._op_count  # TODO: not thread safe - but okay for now
                 self._op_count += 1
 
-                self._event_loop.submit(_post_request, self._server_url, rpc_data, self._user, self._secret,
-                                        _sign_transaction)
+                return _post_request(self._server_url, rpc_data, self._user, self._secret)
             else:
                 logging.error("Not enough money to pay for transaction fees")
 
-        self.get_unspent_outputs(_process_unspent_outputs)
+        self.get_unspent_outputs()
 
-    def get_transaction_receipt(self, transaction_hash, result_cb):
-        super().get_transaction_receipt(transaction_hash, result_cb)
+    def confirm(self, tx_hash):
+        super().confirm(tx_hash)
         pass
 
-    def get_unspent_outputs(self, result_cb):
+    def get_unspent_outputs(self):
         rpc_data = self._base_rpc_data.copy()
 
         rpc_data["method"] = "listunspent"
         rpc_data["id"] = self._op_count
         self._op_count += 1
 
-        self._event_loop.submit(_post_request, self._server_url, rpc_data, self._user, self._secret, result_cb)
+        return _post_request(self._server_url, rpc_data, self._user, self._secret)
