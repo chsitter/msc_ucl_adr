@@ -14,7 +14,7 @@ class Anchoring:
             logging.warning("No default strategy specified")
 
     def get_anchoring_strategies(self):
-        return self._strategies.values()
+        return [x for x in self._strategies.values()]
 
     def anchor(self, hex_data, strategy_name=None):
         strategy = self._default_strategy if strategy_name is None else self._strategies[strategy_name]

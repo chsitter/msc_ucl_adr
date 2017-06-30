@@ -1,0 +1,8 @@
+bitcoin==1.1.42
+ethereum-abi-utils==0.4.0
+ethereum-utils==0.2.0
+Flask==0.12.2
+merkletools==1.0.2
+requests==2.17.3
+urllib3==1.21.1
+web3==3.8.1

@@ -36,6 +36,9 @@ class AnchoringStrategy:
     def get_name(self):
         return self._name
 
+    def get_description(self):
+        return self._description
+
 
 class AllAnchorStrategy(AnchoringStrategy):
     _pending_anchorings = {}

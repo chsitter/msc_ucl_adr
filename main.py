@@ -1,11 +1,10 @@
 import logging
 
-import time
-
-import merkletools
+from flask import Flask
 
 import blockchain_anchor
-from blockchain_anchor import chainpoint_util
+import flask_rest
+from blockchain_anchor import datastore
 from blockchain_anchor.backends.bitcoin_bitcoind import BitcoinIntegration
 from blockchain_anchor.backends.ethereum_web3 import EthereumIntegration
 from blockchain_anchor.strategies import AllAnchorStrategy
@@ -36,16 +35,8 @@ if __name__ == "__main__":
         }
     }
 
-    mt = merkletools.MerkleTools()
-    mt.add_leaf(["Foo", "Bar", "Baz"], True)
-    mt.make_tree()
-    merkle_root = "0x{}".format(mt.get_merkle_root())
-
     anchor = blockchain_anchor.init_anchor(config, "all")
-    anchor.anchor(merkle_root)
-
-    while True:
-        anchors = anchor.confirm(merkle_root)
-        if anchors is not None:
-                print(chainpoint_util.build_v2_receipt(mt, anchors))
-        time.sleep(1)
+    ds = datastore.DataStores(anchor)
+    app = Flask(__name__)
+    flask_rest.setup(app, anchor, ds)
+    app.run(debug=True)

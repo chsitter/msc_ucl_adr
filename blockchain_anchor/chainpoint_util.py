@@ -18,6 +18,15 @@ def build_v3_receipt(merkle_tree: merkletools.MerkleTools, anchors):
     return None
 
 
+def build_v2_receipt_single(merkle_root, proof, rec_hash, anchors):
+    logging.info("Received anchors from backends %s -- %s", merkle_root, anchors)
+    return {"@context": "https://w3id.org/chainpoint/v2",
+                          "type": "ChainpointSHA256v2",
+                          "targetHash": "{}".format(rec_hash),
+                          "merkleRoot": "{}".format(merkle_root),
+                          "proof": proof,
+                          "anchors": [{"type": _chainpoint_type_name(name), "sourceId": sourceId} for name, sourceId in anchors.items()]}
+
 def build_v2_receipt(merkle_tree: merkletools.MerkleTools, anchors):
     logging.info("Received anchors from backends %s -- %s", merkle_tree.get_merkle_root(), anchors)
     chainpoint_receipts = {}
