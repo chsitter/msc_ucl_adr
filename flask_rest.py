@@ -4,30 +4,52 @@ from time import time
 from flask import request, abort
 from math import ceil
 
+import tierion
 from blockchain_anchor import Anchoring, chainpoint_util
 from blockchain_anchor.datastore import DataStores
 
 
-def setup(app, anchoring: Anchoring, ds_holder: DataStores):
-    @app.route('/api/v1/strategies', methods=['GET'])
-    def strategies():
-        if request.method == 'GET':
-            return json.dumps({x.get_name(): x.get_description() for x in anchoring.get_anchoring_strategies()})
+def setup(app, session, anchoring: Anchoring, ds_holder: DataStores):
+    @app.route('/api/v1/accounts', methods=['POST'])
+    @app.route('/api/v1/accounts/<account_id>', methods=['GET', 'DELETE'])
+    def accounts(account_id=None):
+        if request.method == 'POST':
+            account_data = request.json
+            tierion.create_account(session, account_data['name'], account_data['full_name'], account_data['secret'])
+            return "Account created"
+        elif request.method == "DELETE":
+            acct = tierion.delete_account(session, account_id)
+            if acct is None:
+                abort(404, "Error: Couldn't find account " + account_id)
+
+    @app.route('/api/v1/login', methods=['POST'])
+    def login():
+        if request.method == 'POST':
+            account_data = request.json
+            name = account_data['name']
+            secret = account_data['secret']
+
+            if tierion.login(session, name, secret):
+                # TODO: need to generate a token and return it to the user
+                return "Logged in"
+            else:
+                abort(403, "Wrong password")
 
     @app.route('/api/v1/datastores', methods=['GET', 'POST'])
-    @app.route('/api/v1/datastores/<int:dsid>', methods=['GET', 'DELETE', "PUT"])
-    def datastores(dsid=None):
+    @app.route('/api/v1/datastores/<datastore_id>', methods=['GET', 'DELETE', "PUT"])
+    def datastores(datastore_id=None):
         if request.method == 'GET':
-            ds_holder.pocess_pending_records()  # TODO: this should really be done on a timer
-            if dsid is None:
-                return json.dumps([ds_holder.get(_id).json_describe() for _id in ds_holder.get()])
-            ds = ds_holder.get(dsid)
-            if ds is None:
-                abort(404)
-            return ds.json_describe()
+            if datastore_id is None:
+                datastores = tierion.get_datastore(session)
+                return json.dumps([json.loads(ds.json_describe()) for ds in datastores])
+            else:
+                datastore = tierion.get_datastore(session, datastore_id)
+                if datastore is None:
+                    abort(404, "No datastore with ID " + datastore_id + " found")
+                return datastore.json_describe()
 
         elif request.method == "POST":
-            if dsid is not None:
+            if datastore_id is not None:
                 abort(401)
 
             if "name" not in request.json:
@@ -51,18 +73,49 @@ def setup(app, anchoring: Anchoring, ds_holder: DataStores):
             post_data_enabled, post_data_url = get_indicator_and_field("postDataEnabled", "postDataUrl")
             post_receipt_enabled, post_receipt_url = get_indicator_and_field("postReceiptEnabled", "postReceiptUrl")
 
-            ds = ds_holder.create_datastore(name, groupname, redirect_enabled, redirect_url, email_notification_enabled,
-                                            email_notification_address, post_data_enabled, post_data_url,
-                                            post_receipt_enabled, post_receipt_url)
-            return ds.json_describe()
-        elif request.method == "DELETE":
-            if dsid is None:
+            datastore = tierion.create_datastore(session, name, groupname, redirect_enabled, redirect_url,
+                                                 email_notification_enabled, email_notification_address,
+                                                 post_data_enabled, post_data_url, post_receipt_enabled,
+                                                 post_receipt_url)
+            return datastore.json_describe()
+        elif request.method == "PUT":
+            if datastore_id is None:
                 abort(401)
 
-            ds = ds_holder.delete(dsid)
-            if ds is None:
+            name = request.json["name"]
+            groupname = request.json["groupName"] if "groupName" in request.json else None
+
+            def get_indicator_and_field(indicator_name, field_name):
+                indicator = request.json[indicator_name] if indicator_name in request.json else False
+                if indicator:
+                    if field_name not in request.json:
+                        abort(500)
+                    value = request.json[field_name]
+                    return indicator, value
+                return None, None
+
+            redirect_enabled, redirect_url = get_indicator_and_field("redirectEnabled", "redirectUrl")
+            email_notification_enabled, email_notification_address = get_indicator_and_field("emailNotificationEnabled",
+                                                                                             "emailNotificationAddress")
+            post_data_enabled, post_data_url = get_indicator_and_field("postDataEnabled", "postDataUrl")
+            post_receipt_enabled, post_receipt_url = get_indicator_and_field("postReceiptEnabled", "postReceiptUrl")
+
+            datastore = tierion.update_datastore(session, datastore_id, name, groupname, redirect_enabled, redirect_url,
+                                                 email_notification_enabled, email_notification_address,
+                                                 post_data_enabled, post_data_url, post_receipt_enabled,
+                                                 post_receipt_url)
+            if datastore is None:
+                abort(500, "Update failed")
+            return datastore.json_describe()
+
+        elif request.method == "DELETE":
+            if datastore_id is None:
+                abort(401)
+
+            datastore = tierion.delete_datastore(session, datastore_id)
+            if datastore is None:
                 abort(404)
-            return ds.json_describe()
+            return datastore.json_describe()
 
         abort(501)
 
@@ -70,42 +123,40 @@ def setup(app, anchoring: Anchoring, ds_holder: DataStores):
     @app.route('/api/v1/records/<string:record_id>', methods=['GET', 'POST', "DELETE"])
     def records(record_id=None):
         if request.method == "GET":
-            ds_holder.pocess_pending_records()  # TODO: this should really be done on a timer
-
             if record_id is not None:
-                # TODO: gotta find the record in the DS - need some sort of mapping?
-                record = ds_holder.get_record(record_id)
+                record = tierion.get_record(session, id=record_id)
                 if record is None:
-                    abort(404)
+                    abort(404, "Record with ID {} not found".format(record_id))
                 else:
                     return record.json_describe()
             else:
                 if "datastoreId" not in request.args:
-                    abort(401)
-                dsid = int(request.args["datastoreId"])
-                ds = ds_holder.get(dsid)
-                if ds is None:
-                    abort(500)
+                    abort(401, "Required argument datastoreId missing")
+                datastore_id = int(request.args["datastoreId"])
+                datastore = tierion.get_datastore(session, datastore_id)
+                if datastore is None:
+                    abort(500, "No datasstore with ID {} found".format(datastore_id))
 
                 page = request.args["page"] if "page" in request.args else 1
                 pageSize = int(request.args["pageSize"]) if "pageSize" in request.args else 100
                 if pageSize < 1 or pageSize > 10000:
                     abort(401)
-                startDate = request.args["startDate"] if "startDate" in request.args else ds.created_timestamp
-                endDate = time()
+                startDate = int(request.args["startDate"] if "startDate" in request.args else "{}".format(int(datastore.timestamp.timestamp())))
+                endDate = int(time())
 
-                docs = ds.get_records(page, pageSize, startDate, endDate)
+                _records = tierion.get_record(session, datastoreId=datastore_id, page=page, pageSize=pageSize,
+                                              startDate=startDate, endDate=endDate)
 
                 response = {
-                    "accountId": 1,
-                    "datastoreId": dsid,
+                    "accountId": "TODO",
+                    "datastoreId": datastore_id,
                     "page": page,
-                    "pageCount": ceil(len(ds.get_records()) / pageSize),
+                    "pageCount": ceil(len(_records) / pageSize),
                     "pageSize": pageSize,
-                    "recordCount": len(ds.get_records()),
+                    "recordCount": len(_records),
                     "startDate": startDate,
                     "endDate": endDate,
-                    "records": [json.loads(x.json_describe()) for x in docs]
+                    "records": [json.loads(x.json_describe()) for x in _records]
                 }
                 return json.dumps(response)
 
@@ -117,23 +168,20 @@ def setup(app, anchoring: Anchoring, ds_holder: DataStores):
                 abort(500)
 
             datastore_id = request.json["datastoreId"]
-            if datastore_id not in ds_holder.datastores:
-                abort(404)
 
-            ds = ds_holder.datastores[datastore_id]
+            # TODO: use real acct no
             data = request.json
             del data["datastoreId"]
-
-            # TODO: use real acct no instead of 42
-            record = ds_holder.create_record(42, datastore_id, data)
-            record = ds.add_record(record)
+            record = tierion.create_record(session, 1, datastore_id, data)
+            if record is None:
+                abort(500, "Something went wrong creating the record")
             return record.json_describe()
 
         elif request.method == "DELETE":
             if record_id is None:
                 abort(401)
 
-            record = ds_holder.delete_record(record_id)
+            record = tierion.delete_record(session, record_id)
 
             if record is not None:
                 return record.json_describe()

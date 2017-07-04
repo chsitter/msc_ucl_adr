@@ -8,6 +8,7 @@ from blockchain_anchor import datastore
 from blockchain_anchor.backends.bitcoin_bitcoind import BitcoinIntegration
 from blockchain_anchor.backends.ethereum_web3 import EthereumIntegration
 from blockchain_anchor.strategies import AllAnchorStrategy
+from tierion import db
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -35,8 +36,12 @@ if __name__ == "__main__":
         }
     }
 
+    engine = db.init("sqlite:///tierion.db", False)
+    session = db.create_session()
+
     anchor = blockchain_anchor.init_anchor(config, "all")
     ds = datastore.DataStores(anchor)
+
     app = Flask(__name__)
-    flask_rest.setup(app, anchor, ds)
+    flask_rest.setup(app, session, anchor, ds)
     app.run(debug=True)
