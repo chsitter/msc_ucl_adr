@@ -6,13 +6,14 @@ import logging
 from tierion.db import Account
 
 
-def create_account(session, name, full_name, secret, do_commit=True):
+def create_account(session, name, email, full_name, secret, do_commit=True):
     salt = uuid.uuid4().hex
-    _hash = hashlib.sha512(bytearray(secret + salt, 'utf-8')).hexdigest()
     user = Account(
         name=name,
+        email=email,
         fullname=full_name,
-        password_hash=_hash,
+        password_hash=hashlib.sha512(bytearray(secret + salt, 'utf-8')).hexdigest(),
+        apiKey=hashlib.sha512(uuid.uuid4().bytes).hexdigest(),
         salt=salt
     )
 
@@ -42,11 +43,26 @@ def delete_account(session, account_id, do_commit=True):
     return account
 
 
-def login(session, account_name, secret):
-    res = session.query(Account).filter(Account.name == account_name).all()
-    if len(res) == 1:
-        acct = res[0]
-        salt = acct.salt
-        return acct.password_hash == hashlib.sha512(bytearray(secret + salt, 'utf-8')).hexdigest()
+def login(session, account=None, secret=None, api_key=None):
+    """
 
-    return False
+    :param session:     Session to be used for database connection
+    :param account:     Account to e used, must be email in combination with api_token
+    :param secret:      Either secret or api_token must be supplied
+    :param api_key:   Either secret or api_token must be supplied
+    :return:            True if login successful, False otherwise
+    """
+    if account is not None:
+        if secret is not None:
+            res = session.query(Account).filter(Account.name == account).all()
+            if len(res) == 1:
+                acct = res[0]
+                salt = acct.salt
+                return acct.password_hash == hashlib.sha512(bytearray(secret + salt, 'utf-8')).hexdigest()
+
+            return False
+        elif api_key is not None:
+            res = session.query(Account).filter(Account.email == account).all()
+            if len(res) == 1:
+                acct = res[0]
+                return acct.apiKey == api_key

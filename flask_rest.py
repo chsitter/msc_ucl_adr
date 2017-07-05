@@ -1,21 +1,20 @@
 import json
+from math import ceil
 from time import time
 
 from flask import request, abort
-from math import ceil
 
 import tierion
-from blockchain_anchor import Anchoring, chainpoint_util
-from blockchain_anchor.datastore import DataStores
+from blockchain_anchor import chainpoint_util
 
 
-def setup(app, session, anchoring: Anchoring, ds_holder: DataStores):
+def setup(app, session):
     @app.route('/api/v1/accounts', methods=['POST'])
     @app.route('/api/v1/accounts/<account_id>', methods=['GET', 'DELETE'])
     def accounts(account_id=None):
         if request.method == 'POST':
             account_data = request.json
-            tierion.create_account(session, account_data['name'], account_data['full_name'], account_data['secret'])
+            tierion.create_account(session, account_data['name'], account_data['email'], account_data['full_name'], account_data['secret'])
             return "Account created"
         elif request.method == "DELETE":
             acct = tierion.delete_account(session, account_id)
@@ -38,6 +37,9 @@ def setup(app, session, anchoring: Anchoring, ds_holder: DataStores):
     @app.route('/api/v1/datastores', methods=['GET', 'POST'])
     @app.route('/api/v1/datastores/<datastore_id>', methods=['GET', 'DELETE', "PUT"])
     def datastores(datastore_id=None):
+        if tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"]) is not True:
+            abort(403, "User and API Key invalid")
+
         if request.method == 'GET':
             if datastore_id is None:
                 datastores = tierion.get_datastore(session)
@@ -122,6 +124,9 @@ def setup(app, session, anchoring: Anchoring, ds_holder: DataStores):
     @app.route('/api/v1/records', methods=['GET', 'POST'])
     @app.route('/api/v1/records/<string:record_id>', methods=['GET', 'POST', "DELETE"])
     def records(record_id=None):
+        if tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"]) is not True:
+            abort(403, "User and API Key invalid")
+
         if request.method == "GET":
             if record_id is not None:
                 record = tierion.get_record(session, id=record_id)
@@ -187,23 +192,23 @@ def setup(app, session, anchoring: Anchoring, ds_holder: DataStores):
                 return record.json_describe()
             abort(500)
 
-    @app.route('/api/v1/anchor/<int:dsid>', methods=['GET', 'POST'])
-    def anchor(dsid):
-        if dsid is None:
-            abort(404)
-        ds = ds_holder.get(dsid)
-        if ds is None:
-            abort(404)
-
-        if request.method == "GET":
-            anchors = anchoring.confirm("0x{}".format(ds.get_merkle_root()))
-            if anchors is None:
-                return "Anchorings not yet confirmed"
-            else:
-                return json.dumps(chainpoint_util.build_v2_receipt(ds.get_merkle_tree(), anchors))
-
-        elif request.method == "POST":
-            if anchoring.anchor("0x{}".format(ds.get_merkle_root())):
-                return "Ok"
-            else:
-                return "Error"
+    # @app.route('/api/v1/anchor/<int:dsid>', methods=['GET', 'POST'])
+    # def anchor(dsid):
+    #     if dsid is None:
+    #         abort(404)
+    #     ds = ds_holder.get(dsid)
+    #     if ds is None:
+    #         abort(404)
+    #
+    #     if request.method == "GET":
+    #         anchors = anchoring.confirm("0x{}".format(ds.get_merkle_root()))
+    #         if anchors is None:
+    #             return "Anchorings not yet confirmed"
+    #         else:
+    #             return json.dumps(chainpoint_util.build_v2_receipt(ds.get_merkle_tree(), anchors))
+    #
+    #     elif request.method == "POST":
+    #         if anchoring.anchor("0x{}".format(ds.get_merkle_root())):
+    #             return "Ok"
+    #         else:
+    #             return "Error"

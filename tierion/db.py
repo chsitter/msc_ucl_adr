@@ -1,9 +1,10 @@
 import json
 
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, PickleType, func
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, PickleType, func
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.pool import StaticPool
 
 Base = declarative_base()
 engine = None
@@ -14,16 +15,18 @@ class Account(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
+    email = Column(String, unique=True)
     fullname = Column(String)
     password_hash = Column(String)
     salt = Column(String)
-    token_expiry_time = Column(DateTime(timezone=True), nullable=True)
+    apiKey = Column(String)
+    last_token_time = Column(DateTime(timezone=True), nullable=True)
 
     records = relationship("Record", back_populates="owner")
 
     def __repr__(self):
-        return "<Account(name='{}', fullname='{}', password='{}', token_expiry_time='{}')>".format(
-            self.name, self.fullname, self.password, self.token_expiry_time)
+        return "<Account(name='{}', fullname='{}', password='{}', last_token_time='{}')>".format(
+            self.name, self.fullname, self.password, self.last_token_time)
 
 
 class DataStore(Base):
@@ -134,8 +137,11 @@ class Record(Base):
 def init(connection_string, echo):
     global engine
     if engine is None:
-        engine = create_engine(connection_string, echo=echo)
+        engine = create_engine(connection_string, echo=echo,
+                               connect_args={'check_same_thread': False},
+                               poolclass=StaticPool)
         Base.metadata.create_all(engine)
+
     return engine
 
 
