@@ -1,8 +1,9 @@
 import logging
+
 import requests
+from bitcoin import *
 
 from blockchain_anchor.backends import BlockchainIntegration
-from bitcoin import *
 
 
 def mk_opreturn(msg, rawtx=None, json=0):
@@ -50,17 +51,6 @@ class BitcoinIntegration(BlockchainIntegration):
 
     def get_server_url(self):
         return "http://{}:{}".format(self._host, self._port)
-
-    def test_connection(self):
-        super().test_connection()
-
-        data = self._base_data.copy()
-        data["method"] = "getbestblockhash"
-        data["id"] = self._op_count
-        self._op_count += 1
-
-        res, err = self._send_post_request(data)
-        return True if err is None else False
 
     def _send_post_request(self, payload):
         res = requests.post(self.get_server_url(), json.dumps(payload), auth=(self._user, self._secret), timeout=2.5)

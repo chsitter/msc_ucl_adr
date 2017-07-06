@@ -5,6 +5,7 @@ from flask import Flask
 
 import flask_rest
 import tierion
+from blockchain_anchor.backends.bitcoin_bitcoind import BitcoinIntegration
 from blockchain_anchor.backends.ethereum import EthereumIntegration
 from tierion import db
 
@@ -20,13 +21,15 @@ if __name__ == "__main__":
     eth_acct = utils.decode_addr(utils.privtoaddr(eth_privkey))
 
     eth = EthereumIntegration(eth_privkey, eth_acct, "http://127.0.0.1:8079")
+    btc = BitcoinIntegration("localhost", 18332, "bitcoinrpc", "c8805869db20730a2ddb7f62cfa2745c",
+                             "mqCnowcw6K24bqD4Xcio3iync1ziWXEqio")
 
 
     def anchor_documents_callback(merkle_root):
         logging.info("Anchoring merkle_root %s", merkle_root)
 
-        # TODO: Anchor to multiple
         eth_tx_id = eth.anchor(merkle_root)
+        # btc_tx_id = btc.anchor(merkle_root)
 
         if eth_tx_id is None:
             logging.error("Anchoring merkle root %s failed", merkle_root)
@@ -34,19 +37,25 @@ if __name__ == "__main__":
         else:
             logging.debug("Anchored merkle tree root %s into transaction %s", merkle_root, eth_tx_id)
             return [("ETHData", eth_tx_id)]
+            # return [("BTCOpReturn", btc_tx_id)]
+            # return [("ETHData", eth_tx_id), ("BTCOpReturn", btc_tx_id)]
 
 
     def confirm_anchorings_callback(endpoint, transaction_id):
         logging.info("Confirming transaction %s on %s", transaction_id, endpoint)
+
         if endpoint == "ETHData":
             tx_id = eth.confirm(transaction_id)
-            return tx_id
         elif endpoint == "BTCOpReturn":
-            tx_id = None  # btc.confirm(transaction_id)
-            return tx_id
+            tx_id = btc.confirm(transaction_id)
         else:
-            logging.info("Transaction %s on %s not yet confirmed", transaction_id, endpoint)
+            logging.info("Unsupported endpoint %s", endpoint)
             return None
+
+        if tx_id is None:
+            logging.info("Transaction %s on %s not yet confirmed", transaction_id, endpoint)
+
+        return tx_id
 
 
     anchor_thr = tierion.start_anchoring_timer(anchor_documents_callback, queue_max_size=3, checking_interval=30)
