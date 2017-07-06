@@ -130,6 +130,7 @@ def start_anchoring_timer(callback, queue_max_size=10, record_max_age=600, check
     """
     logging.info("Starting QueueChecker Thread")
     thr = QueueCheckerThread(checking_interval, _check_queue_fn, [callback, queue_max_size, record_max_age])
+    thr.daemon = True
     thr.start()
     return thr
 
@@ -137,6 +138,7 @@ def start_anchoring_timer(callback, queue_max_size=10, record_max_age=600, check
 def start_confirmation_thread(callback, checking_interval=30):
     logging.info("Starting ConfirmationChecker Thread")
     thr = ConfirmationCheckerThread(checking_interval, _check_confirmations_fn, [callback])
+    thr.daemon = True
     thr.start()
     return thr
 

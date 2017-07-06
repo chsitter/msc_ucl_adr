@@ -1,8 +1,14 @@
 bitcoin==1.1.42
+ethereum==2.0.4
 ethereum-abi-utils==0.4.0
 ethereum-utils==0.2.0
 Flask==0.12.2
 merkletools==1.0.2
+pyethash==0.1.27
+pysha3==1.0.2
+python-bitcoinrpc==1.0
 requests==2.17.3
+SQLAlchemy==1.1.11
 urllib3==1.21.1
 web3==3.8.1
+Werkzeug==0.12.2
