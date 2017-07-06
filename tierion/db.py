@@ -1,10 +1,11 @@
 import json
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, PickleType, func
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, PickleType, func, Table
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import StaticPool
+from tierion import util
 
 Base = declarative_base()
 engine = None
@@ -84,6 +85,12 @@ class DataStore(Base):
         })
 
 
+record_confirmation_table = Table('record_confirmation', Base.metadata,
+                                  Column('record_id', Integer, ForeignKey('record.id')),
+                                  Column('confirmation_id', Integer, ForeignKey('confirmation.id'))
+                                  )
+
+
 class Record(Base):
     """
     id 	                        A unique identifier for the record within the system.
@@ -110,11 +117,12 @@ class Record(Base):
     json = Column(String)
     sha256 = Column(String)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    blockchain_receipt = Column(String)
     insights = Column(String)
+    proof = Column(PickleType)
 
     datastore = relationship("DataStore", back_populates="records")
     owner = relationship("Account", back_populates="records")
+    confirmations = relationship("Confirmation", secondary=record_confirmation_table, back_populates="records")
 
     def __repr__(self):
         return "<Record(id='{}, accountId='{}', datastoreId='{}', status='{}')>".format(self.id, self.accountId,
@@ -130,8 +138,49 @@ class Record(Base):
             "json": self.json,
             "sha256": self.sha256,
             "timestamp": "{}".format(int(self.timestamp.timestamp())),
-            "blockchain_receipt": self.blockchain_receipt
+            "blockchain_receipt": util.build_chainpoint_receipt_record(self)
         })
+
+
+item_confirmation_table = Table('item_confirmation', Base.metadata,
+                                Column('item_id', Integer, ForeignKey('hashitem.id')),
+                                Column('confirmation_id', Integer, ForeignKey('confirmation.id'))
+                                )
+
+
+class HashItem(Base):
+    __tablename__ = 'hashitem'
+
+    id = Column(Integer, primary_key=True)
+    accountId = Column(Integer, ForeignKey("account.id"), nullable=False)
+    sha256 = Column(String, nullable=False)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    proof = Column(PickleType)
+
+    confirmations = relationship("Confirmation", secondary=item_confirmation_table, back_populates="items")
+
+    def __repr__(self):
+        return "<HashItem(id='{}', sha256='{}', pending='{}', timestamp='{}')>".format(
+            self.id, self.sha256, len(self.confirmations) == 0, self.timestamp)
+
+    def json_describe(self):
+        return json.dumps({
+            "receipt_id": self.id,
+            "timestamp": "{}".format(int(self.timestamp.timestamp()))
+        })
+
+
+class Confirmation(Base):
+    __tablename__ = 'confirmation'
+
+    id = Column(Integer, primary_key=True)
+    endpoint = Column(String, nullable=False)
+    tx_id = Column(String, default=None)
+    block_header = Column(String, default=None)
+    merkle_root = Column(String, nullable=False)
+
+    items = relationship("HashItem", secondary=item_confirmation_table, back_populates="confirmations")
+    records = relationship("Record", secondary=record_confirmation_table, back_populates="confirmations")
 
 
 def init(connection_string, echo):

@@ -1,7 +1,9 @@
+import hashlib
 import json
 from unittest import TestCase
+from uuid import uuid4
 
-from tierion import db, datastore, record, accounts
+from tierion import db, datastore, record, accounts, hashitem
 from tierion.db import Record
 
 
@@ -93,7 +95,6 @@ class TestAccountsAPI(TestCase):
         assert accounts.login(self.session, "test", "wrong pass") is False
 
 
-
 class TestRecordAPI(TestCase):
     def setUp(self):
         self.engine = db.init("sqlite:///:memory:", False)
@@ -102,7 +103,7 @@ class TestRecordAPI(TestCase):
         db.Base.metadata.create_all(bind=self.engine)
 
         self.session = db.create_session()
-        self.user = datastore.create_account(self.session, "tester", "test@test.com", "tester user", "secret")
+        self.user = accounts.create_account(self.session, "tester", "test@test.com", "tester user", "secret")
         self.ds1 = datastore.create_datastore(self.session, "Store1", "Testing")
         self.ds2 = datastore.create_datastore(self.session, "Store2", "Testing")
 
@@ -174,3 +175,37 @@ class TestRecordAPI(TestCase):
 
     def test_delete_non_existing_record(self):
         assert record.delete_record(self.session, record_id=42) is None
+
+
+class TestHashAPI(TestCase):
+    def setUp(self):
+        self.engine = db.init("sqlite:///:memory:", False)
+
+        db.Base.metadata.drop_all(bind=self.engine)
+        db.Base.metadata.create_all(bind=self.engine)
+
+        self.session = db.create_session()
+        self.user = accounts.create_account(self.session, "tester", "test@test.com", "tester user", "secret")
+
+    def test_create_hashitem(self):
+        hex_data = hashlib.sha256(uuid4().bytes).hexdigest()
+        item = hashitem.create_hashitem(self.session, self.user.id, hex_data)
+
+        assert item is not None
+        assert item.sha256 == hex_data
+
+    def test_get_pending_hashitems(self):
+        hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
+        hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
+
+        items = hashitem.get_hashitem(self.session, pending=True)
+
+        assert len(items) == 2
+
+    def test_get_not_pending_hashitems(self):
+        hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
+        hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
+
+        items = hashitem.get_hashitem(self.session, pending=False)
+
+        assert len(items) == 0

@@ -1,30 +1,13 @@
 import logging
-from enum import Enum
-
-from blockchain_anchor.backends import BlockchainIntegration
-
-
-class AnchorState(Enum):
-    UNSENT = 1,
-    UNCONFIRMED = 2,
-    CONFIRMED = 3,
-    FAILED = 4,
 
 
 class AnchoringStrategy:
-    _integrations = None
-    _name = None
-
-    def __init__(self, name: str, description: str, integrations: [BlockchainIntegration]):
+    def __init__(self, name: str, description: str):
         logging.debug("Initialising AnchoringStrategy")
         self._name = name
         self._description = description
-        self._integrations = [] if integrations is None else integrations
 
-    def embed(self, hex_data):
-        pass
-
-    def get_embedding_status(self, hex_data):
+    def anchor(self, hex_data, backends):
         pass
 
     def confirm(self, hex_data):
@@ -41,49 +24,31 @@ class AnchoringStrategy:
 
 
 class AllAnchorStrategy(AnchoringStrategy):
-    _pending_anchorings = {}
-
-    def __init__(self, integrations: [BlockchainIntegration]):
-        super().__init__("all", "This strategy anchors the document to all registered integrations", integrations)
+    def __init__(self):
+        super().__init__("all", "This strategy anchors the document to all registered integrations")
 
     def embed(self, hex_data):
-        self._pending_anchorings[hex_data] = {}
-        for name, integration in self._integrations.items():
-            assert isinstance(integration, BlockchainIntegration)
-            self._pending_anchorings[hex_data][name] = {"state": AnchorState.UNSENT, "txid": None}
-            embedding_result = integration.embed(hex_data)
-            if embedding_result is None:
-                self._pending_anchorings[hex_data][name] = {"state": AnchorState.FAILED, "txid": None}
-            else:
-                self._pending_anchorings[hex_data][name] = {"state": AnchorState.UNCONFIRMED,
-                                                            "txid": embedding_result}
-
-    def get_embedding_status(self, hex_data):
-        return self._pending_anchorings[hex_data]
+        pass
 
     def confirm(self, hex_data):
-        results = {}
-        if hex_data in self._pending_anchorings:
-            for name, integration in self._integrations.items():
-                results[name] = None
-                assert isinstance(integration, BlockchainIntegration)
-                pending = self._pending_anchorings[hex_data][name]
-                if pending["state"] == AnchorState.CONFIRMED:
-                    results[name] = pending["block_hash"]
-                elif pending["state"] == AnchorState.UNCONFIRMED:
-                    results[name] = integration.confirm(pending["txid"])
+        pass
 
-                    if results[name] is not None:
-                        pending["block_hash"] = results[name]
-                        pending["state"] = AnchorState.CONFIRMED
 
-                elif pending["state"] == AnchorState.FAILED:
-                    results[name] = 0x0
-                else:
-                    raise Exception("Unhandled confirmation condition")
-                    # TODO: what do we do here?
+class AnyAnchorStrategy(AnchoringStrategy):
+    def get_name(self):
+        return super().get_name()
 
-            return results
-        else:
-            logging.warning("Can't create confirmation for data %s as data isn't pending", hex_data)
-            return None
+    def anchor(self, hex_data, backends):
+        super().anchor(hex_data, backends)
+
+    def describe(self):
+        return super().describe()
+
+    def __init__(self, name: str, description: str):
+        super().__init__(name, description)
+
+    def get_description(self):
+        return super().get_description()
+
+    def confirm(self, hex_data):
+        super().confirm(hex_data)

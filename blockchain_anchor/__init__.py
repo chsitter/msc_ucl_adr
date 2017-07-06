@@ -1,7 +1,6 @@
 import logging
 
 import blockchain_anchor.backends
-from blockchain_anchor.strategies import AnchoringStrategy
 
 
 class Anchoring:
@@ -13,20 +12,18 @@ class Anchoring:
         if self._default_strategy is None:
             logging.warning("No default strategy specified")
 
-    def get_anchoring_strategies(self):
-        return [x for x in self._strategies.values()]
-
     def anchor(self, hex_data, strategy_name=None):
-        strategy = self._default_strategy if strategy_name is None else self._strategies[strategy_name]
-        assert isinstance(strategy, AnchoringStrategy)
-
-        if hex_data not in self._pending_anchorings:
-            self._pending_anchorings[hex_data] = strategy.get_name()
-            strategy.embed(hex_data)
-            return True
-        else:
-            logging.warning("Ignoring anchoring attempt for data %s as it's already pending anchoring", hex_data)
-            return False
+        pass
+        # strategy = self._default_strategy if strategy_name is None else self._strategies[strategy_name]
+        # assert isinstance(strategy, AnchoringStrategy)
+        #
+        # if hex_data not in self._pending_anchorings:
+        #     self._pending_anchorings[hex_data] = strategy.get_name()
+        #     strategy.embed(hex_data)
+        #     return True
+        # else:
+        #     logging.warning("Ignoring anchoring attempt for data %s as it's already pending anchoring", hex_data)
+        #     return False
 
     def confirm(self, hex_data):
         if hex_data not in self._pending_anchorings:
@@ -44,12 +41,13 @@ class Anchoring:
 
 def init_anchor(config: dict, default_strategy: str = None) -> Anchoring:
     _integrations = {}
-    _strategies = {}
+    # _strategies = {}
 
-    for name, (cls, args) in config["backends"].items():
-        _integrations[name] = cls(**args)
+    for name, (cls, anchor_type, args) in config["backends"].items():
+        _integrations[name] = (cls(**args), anchor_type)
+        _integrations[name].set_name(name)
 
-    for name, cls in config["strategies"].items():
-        _strategies[name] = cls(_integrations)
+    # for name, cls in config["strategies"].items():
+    #     _strategies[name] = cls(_integrations)
 
-    return Anchoring(_strategies, default_strategy)
+    return Anchoring(default_strategy)

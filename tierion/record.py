@@ -1,15 +1,15 @@
 import hashlib
 import json
 import logging
+import sys
 import uuid
+from datetime import datetime
 from enum import Enum
 
 import sqlalchemy.exc
-import sys
 
-from datetime import datetime
-from tierion.db import Record
 from tierion import get_datastore, get_account
+from tierion.db import Record
 
 
 class RecordState(Enum):

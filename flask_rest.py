@@ -4,8 +4,8 @@ from time import time
 
 from flask import request, abort
 
-import tierion
-from blockchain_anchor import chainpoint_util
+import tierion.util
+from tierion import util
 
 
 def setup(app, session):
@@ -37,7 +37,8 @@ def setup(app, session):
     @app.route('/api/v1/datastores', methods=['GET', 'POST'])
     @app.route('/api/v1/datastores/<datastore_id>', methods=['GET', 'DELETE', "PUT"])
     def datastores(datastore_id=None):
-        if tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"]) is not True:
+        login_ok, account_id = tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"])
+        if login_ok is not True:
             abort(403, "User and API Key invalid")
 
         if request.method == 'GET':
@@ -124,7 +125,8 @@ def setup(app, session):
     @app.route('/api/v1/records', methods=['GET', 'POST'])
     @app.route('/api/v1/records/<string:record_id>', methods=['GET', 'POST', "DELETE"])
     def records(record_id=None):
-        if tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"]) is not True:
+        login_ok, account_id = tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"])
+        if login_ok is not True:
             abort(403, "User and API Key invalid")
 
         if request.method == "GET":
@@ -174,10 +176,9 @@ def setup(app, session):
 
             datastore_id = request.json["datastoreId"]
 
-            # TODO: use real acct no
             data = request.json
             del data["datastoreId"]
-            record = tierion.create_record(session, 1, datastore_id, data)
+            record = tierion.create_record(session, account_id, datastore_id, data)
             if record is None:
                 abort(500, "Something went wrong creating the record")
             return record.json_describe()
@@ -191,6 +192,26 @@ def setup(app, session):
             if record is not None:
                 return record.json_describe()
             abort(500)
+
+    @app.route('/api/v1/hashitems', methods=['POST'])
+    def hashitems():
+        login_ok, acct_id = tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"])
+        if login_ok is not True:
+            abort(403, "User and API Key invalid")
+
+        hex_data = request.json["hash"]
+        item = tierion.create_hashitem(session, acct_id, hex_data)
+        return item.json_describe()
+
+    @app.route('/api/v1/receipts/<int:receipt_id>', methods=['GET'])
+    def receipts(receipt_id):
+        login_ok, acct_id = tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"])
+        if not login_ok:
+            abort(403, "User and API Key invalid")
+
+        item = tierion.get_hashitem(session, item_id=receipt_id)
+        receipt = util.build_chainpoint_receipt(item)
+        return json.dumps(receipt)
 
     # @app.route('/api/v1/anchor/<int:dsid>', methods=['GET', 'POST'])
     # def anchor(dsid):

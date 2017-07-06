@@ -76,8 +76,8 @@ class BitcoinIntegration(BlockchainIntegration):
         else:
             return None, res.json()
 
-    def embed(self, hex_data):
-        super().embed(hex_data)
+    def anchor(self, hex_data):
+        super().anchor(hex_data)
         utxos, err = self.get_unspent_outputs()
         if err is not None:
             logging.error("Error %s", err)
