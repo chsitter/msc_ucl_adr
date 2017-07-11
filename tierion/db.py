@@ -85,12 +85,6 @@ class DataStore(Base):
         })
 
 
-record_confirmation_table = Table('record_confirmation', Base.metadata,
-                                  Column('record_id', Integer, ForeignKey('record.id')),
-                                  Column('confirmation_id', Integer, ForeignKey('confirmation.id'))
-                                  )
-
-
 class Record(Base):
     """
     id 	                        A unique identifier for the record within the system.
@@ -115,14 +109,13 @@ class Record(Base):
     status = Column(String, nullable=False)
     data = Column(PickleType)
     json = Column(String)
-    sha256 = Column(String)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     insights = Column(String)
-    proof = Column(PickleType)
+    hashitemId = Column(Integer, ForeignKey("hashitem.id"), nullable=False)
 
     datastore = relationship("DataStore", back_populates="records")
     owner = relationship("Account", back_populates="records")
-    confirmations = relationship("Confirmation", secondary=record_confirmation_table, back_populates="records")
+    hashitem = relationship("HashItem", uselist=False, back_populates="record", lazy="subquery")
 
     def __repr__(self):
         return "<Record(id='{}, accountId='{}', datastoreId='{}', status='{}')>".format(self.id, self.accountId,
@@ -136,9 +129,9 @@ class Record(Base):
             "status": self.status,
             "data": self.data,
             "json": self.json,
-            "sha256": self.sha256,
+            "sha256": self.hashitem.proof,
             "timestamp": "{}".format(int(self.timestamp.timestamp())),
-            "blockchain_receipt": util.build_chainpoint_receipt_record(self)
+            "blockchain_receipt": util.build_chainpoint_receipt(self.hashitem)
         })
 
 
@@ -158,6 +151,7 @@ class HashItem(Base):
     proof = Column(PickleType)
 
     confirmations = relationship("Confirmation", secondary=item_confirmation_table, back_populates="items")
+    record = relationship("Record", uselist=False, back_populates="hashitem")
 
     def __repr__(self):
         return "<HashItem(id='{}', sha256='{}', pending='{}', timestamp='{}')>".format(
@@ -180,7 +174,6 @@ class Confirmation(Base):
     merkle_root = Column(String, nullable=False)
 
     items = relationship("HashItem", secondary=item_confirmation_table, back_populates="confirmations")
-    records = relationship("Record", secondary=record_confirmation_table, back_populates="confirmations")
 
 
 def init(connection_string, echo):
@@ -196,5 +189,4 @@ def init(connection_string, echo):
 
 def create_session():
     global engine
-    Session = sessionmaker(bind=engine)
-    return Session()
+    return sessionmaker(bind=engine)()

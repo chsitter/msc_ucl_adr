@@ -58,11 +58,13 @@ def login(session, account=None, secret=None, api_key=None):
             if len(res) == 1:
                 acct = res[0]
                 salt = acct.salt
-                return acct.password_hash == hashlib.sha512(bytearray(secret + salt, 'utf-8')).hexdigest(), acct.id
+                login_ok = acct.password_hash == hashlib.sha512(bytearray(secret + salt, 'utf-8')).hexdigest()
+                return login_ok, acct.id if login_ok else None
 
             return False
         elif api_key is not None:
             res = session.query(Account).filter(Account.email == account).all()
             if len(res) == 1:
                 acct = res[0]
-                return acct.apiKey == api_key, acct.id
+                login_ok = acct.apiKey == api_key
+                return login_ok, acct.id if login_ok else None

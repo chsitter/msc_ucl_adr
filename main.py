@@ -21,8 +21,7 @@ if __name__ == "__main__":
     eth_acct = utils.decode_addr(utils.privtoaddr(eth_privkey))
 
     eth = EthereumIntegration(eth_privkey, eth_acct, "http://127.0.0.1:8079")
-    btc = BitcoinIntegration("localhost", 18332, "bitcoinrpc", "c8805869db20730a2ddb7f62cfa2745c",
-                             "mqCnowcw6K24bqD4Xcio3iync1ziWXEqio")
+    # btc = BitcoinIntegration("localhost", 18332, "bitcoinrpc", "c8805869db20730a2ddb7f62cfa2745c", "mqCnowcw6K24bqD4Xcio3iync1ziWXEqio")
 
 
     def anchor_documents_callback(merkle_root):
@@ -41,25 +40,26 @@ if __name__ == "__main__":
             # return [("ETHData", eth_tx_id), ("BTCOpReturn", btc_tx_id)]
 
 
-    def confirm_anchorings_callback(endpoint, transaction_id):
-        logging.info("Confirming transaction %s on %s", transaction_id, endpoint)
-
-        if endpoint == "ETHData":
-            tx_id = eth.confirm(transaction_id)
-        elif endpoint == "BTCOpReturn":
-            tx_id = btc.confirm(transaction_id)
-        else:
-            logging.info("Unsupported endpoint %s", endpoint)
-            return None
-
-        if tx_id is None:
-            logging.info("Transaction %s on %s not yet confirmed", transaction_id, endpoint)
-
-        return tx_id
+    # def confirm_anchorings_callback(endpoint, transaction_id):
+    #     logging.info("Confirming transaction %s on %s", transaction_id, endpoint)
+    #
+    #     if endpoint == "ETHData":
+    #         block_header = eth.confirm(transaction_id)
+    #     elif endpoint == "BTCOpReturn":
+    #         block_header = None
+    #         # block_header = btc.confirm(transaction_id)
+    #     else:
+    #         logging.info("Unsupported endpoint %s", endpoint)
+    #         return None
+    #
+    #     if block_header is None:
+    #         logging.info("Transaction %s on %s not yet confirmed", transaction_id, endpoint)
+    #
+    #     return block_header
 
 
     anchor_thr = tierion.start_anchoring_timer(anchor_documents_callback, queue_max_size=3, checking_interval=30)
-    confirm_thr = tierion.start_confirmation_thread(confirm_anchorings_callback, checking_interval=30)
+    # confirm_thr = tierion.start_confirmation_thread(confirm_anchorings_callback, checking_interval=30)
 
     app = Flask(__name__)
 
@@ -67,4 +67,4 @@ if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)
 
     tierion.stop_anchoring_thread(anchor_thr)
-    tierion.stop_confirmation_thread(confirm_thr)
+    # tierion.stop_confirmation_thread(confirm_thr)

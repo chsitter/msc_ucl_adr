@@ -19,24 +19,19 @@ def _check_queue_fn(callback, queue_max_size, record_max_age):
     logging.debug("Checking queue (max_size: %d, max_age: %d)", queue_max_size, record_max_age)
     session = db.create_session()
 
-    end_date = int((datetime.now() - timedelta(seconds=record_max_age)).timestamp())
-    have_expired_records = len(get_record(session, status='queued', endDate=end_date)) > 0
+    end_date = int((datetime.utcnow() - timedelta(seconds=record_max_age)).timestamp())
+    have_expired_hashitems = len(get_hashitem(session, pending=True, end_date=end_date)) > 0
     session.rollback()
 
-    if not have_expired_records:
-        have_expired_records = len(get_hashitem(session, pending=True, endDate=end_date)) > 0
-        session.rollback()
-
-    queued_records = get_record(session, status='queued', for_update=True)
     queued_hashitems = get_hashitem(session, pending=True, for_update=True)
 
-    if len(queued_records) >= queue_max_size or have_expired_records:
-        # sent = callback(queued_records, queued_hashitems)
-        # [("Ethereum", eth_tx_id)], merkle_root, record_proofs, hashitem_proofs
+    if len(queued_hashitems) >= queue_max_size or have_expired_hashitems:
+        # sent = callback(queued_hashitems)
+        # [("Ethereum", eth_tx_id)], merkle_root, hashitem_proofs
         # TODO: maybe return the merkle tree and look up leaf hashes in here
 
-        logging.debug("Anchoring %d records and %d hashitems", len(queued_records), len(queued_hashitems))
-        merkle_root, record_proofs, hashitem_proofs = build_merkle_tree(queued_records, queued_hashitems)
+        logging.debug("Anchoring %d hashitems including %d records", len(queued_hashitems), len([x for x in queued_hashitems if x.record is not None]))
+        merkle_root, hashitem_proofs = build_merkle_tree(queued_hashitems)
 
         tx_ids = callback(merkle_root)
 
@@ -44,15 +39,11 @@ def _check_queue_fn(callback, queue_max_size, record_max_age):
 
             confirmations = [db.Confirmation(endpoint=ep, tx_id=tx_id, merkle_root=merkle_root) for ep, tx_id in tx_ids]
             [session.add(c) for c in confirmations]
-            for r in queued_records:
-                if r.id in record_proofs:
-                    r.proof = record_proofs[r.id]
-                    r.status = RecordState.UNPUBLISHED.value[0]  # TODO: why [0]?
-                    [r.confirmations.append(c) for c in confirmations]
-                    session.add(r)
             for i in queued_hashitems:
                 if i.id in hashitem_proofs:
                     i.proof = hashitem_proofs[i.id]
+                    if i.record is not None:
+                        i.record.status = RecordState.UNPUBLISHED.value[0]  # TODO: why [0]?
                     [i.confirmations.append(c) for c in confirmations]
                     session.add(i)
                 else:
@@ -68,7 +59,7 @@ def _check_queue_fn(callback, queue_max_size, record_max_age):
 def _check_confirmations_fn(callback):
     logging.debug("Checking pending confirmations")
     session = db.create_session()
-    pending_confirmations = session.query(Confirmation).filter(Confirmation.block_header == None).with_for_update().all()
+    pending_confirmations = session.query(Confirmation).filter(Confirmation.block_header.is_(None)).with_for_update().all()
 
     if len(pending_confirmations) > 0:
         for c in pending_confirmations:
@@ -153,23 +144,17 @@ def stop_confirmation_thread(confirm_thread: ConfirmationCheckerThread):
     confirm_thread.stop()
 
 
-def build_merkle_tree(records, hashitems):
+def build_merkle_tree(hashitems):
     """
     Builds a merkletools merkle tree from the list of records passed in
-    :param records:
+    :param hashitems: Hex strings to be added as leaf nodes
     :return:
     """
-    logging.debug("Building merkle tree for {} records and {} hashitems".format(len(records), len(hashitems)))
+    logging.debug("Building merkle tree for {} hashitems".format(len(hashitems)))
     mt = merkletools.MerkleTools()
-    for r in records:
-        mt.add_leaf(r.sha256)
-
     for i in hashitems:
         mt.add_leaf(i.sha256)
 
     mt.make_tree()
-
-    record_proofs = {records[i].id: mt.get_proof(i) for i in range(0, len(records))}
-    hashitem_proofs = {hashitems[i - len(records)].id: mt.get_proof(i) for i in
-                       range(len(records), len(records) + len(hashitems))}
-    return mt.get_merkle_root(), record_proofs, hashitem_proofs
+    item_proofs = {hashitems[i].id: mt.get_proof(i) for i in range(0, len(hashitems))}
+    return mt.get_merkle_root(), item_proofs

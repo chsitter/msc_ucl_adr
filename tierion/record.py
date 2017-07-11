@@ -9,6 +9,7 @@ from enum import Enum
 import sqlalchemy.exc
 
 from tierion import get_datastore, get_account
+from tierion.hashitem import create_hashitem
 from tierion.db import Record
 
 
@@ -56,7 +57,7 @@ def get_record(session, datastoreId=None, page=1, pageSize=100, startDate=None, 
         return query.all()
 
 
-def create_record(session, account_id, datastore_id, data, status='queued', do_commit=True):
+def create_record(session, account_id, datastore_id, data, status=RecordState.QUEUED.value[0], do_commit=True):
     """
     :param session:                     The session to be used for the DB connection
     :param account_id:	                A unique numeric identifier for the Account associated with this Record.
@@ -77,14 +78,17 @@ def create_record(session, account_id, datastore_id, data, status='queued', do_c
         return None
 
     _json = json.dumps(data)
+
+    hashitem = create_hashitem(session, account_id, hashlib.sha256(bytearray(_json, 'utf-8')).hexdigest(), False)
+
     rec = Record(
         id=str(uuid.uuid4()),
-        accountId=account_id,
         datastoreId=datastore_id,
+        accountId=account_id,
         status=status,
         data=data,
         json=_json,
-        sha256=hashlib.sha256(bytearray(_json, 'utf-8')).hexdigest()
+        hashitem=hashitem
     )
     ds.records.append(rec)
     user.records.append(rec)
