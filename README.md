@@ -5,6 +5,7 @@ Open Source implementation of the [Tierion](https://tierion.com/) platform, mimi
 ## Getting started
 This library is implemented in Python3 and relies on third party libraries for the REST Server as well as the blockchain integration. 
 In order to run the server, the following steps are required:
+
 1. Clone the repository
 2. Install dependencies `pip install -r requirements.txt`
 3. Configure the blockchain integration
@@ -17,6 +18,7 @@ Every Request must include the two custom headers `X-Username: <email>` and `X-A
 
 ### User management
 The server exposes rest endpoints to manage user accounts, the supported operations are as follows:
+
 * **Create User:** `POST` - `http://127.0.0.1:5000/api/v1/accounts`
     
     Payload:
@@ -56,6 +58,7 @@ The Data API allows to manage datastores and records. Records are associated wit
  
 #### Datastores
 The server exposes REST endpoints to for datastore management 
+
 * **Get All Datastores:** `GET` - `http://127.0.0.1:5000/api/v1/datastores` 
 
     Example:
@@ -142,6 +145,7 @@ The server exposes REST endpoints to for datastore management
 
 #### Records
 The server exposes REST endpoints to manage records
+
 * **Get Records:** `GET` - `http://127.0.0.1:5000/api/v1/records?datastoreId=<datastoreId>`
 
     [URL Parameters](https://tierion.com/docs/dataapi#api-get-records):
@@ -210,6 +214,7 @@ The server exposes REST endpoints to manage Hashitems
       "hash": "9dbd72de6836ce7c05c0c065b474af43598cdaace5deae8054e8efb03cb58d81"
     }
     ```
+    
     Example:
     ```
     curl -X POST \
