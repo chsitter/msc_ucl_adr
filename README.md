@@ -27,3 +27,6 @@ The anchoring library is designed in a way such that it supports:
     - changing the blockchain integrations easily (interfaces between components need clearer definition still)
     - strategies can be implemented and added, currently only available strategy is 'all' meaning that it only confirms once the hash has been anchored with all available backends
         - can easily be extended via configuration
+
+
+geth --identity "TestNode" --rpc --rpcport "8079" --rpccorsdomain "*" --datadir "ethereum_testnet" --port "30303" --networkid 1234 console
