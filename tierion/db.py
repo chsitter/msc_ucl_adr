@@ -29,6 +29,15 @@ class Account(Base):
         return "<Account(name='{}', fullname='{}', password='{}', last_token_time='{}')>".format(
             self.name, self.fullname, self.password, self.last_token_time)
 
+    def json_describe(self):
+        return json.dumps({
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "fullname": self.fullname,
+            "api_key": self.apiKey
+        })
+
 
 class DataStore(Base):
     """

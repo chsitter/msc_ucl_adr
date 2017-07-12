@@ -10,16 +10,24 @@ from tierion import util
 
 def setup(app, session):
     @app.route('/api/v1/accounts', methods=['POST'])
-    @app.route('/api/v1/accounts/<account_id>', methods=['GET', 'DELETE'])
-    def accounts(account_id=None):
+    @app.route('/api/v1/accounts/<account_name>', methods=['GET', 'DELETE'])
+    def accounts(account_name=None):
         if request.method == 'POST':
             account_data = request.json
             tierion.create_account(session, account_data['name'], account_data['email'], account_data['full_name'], account_data['secret'])
             return "Account created"
-        elif request.method == "DELETE":
-            acct = tierion.delete_account(session, account_id)
+        elif request.method == 'GET':
+            # TODO: Add in Authentication
+            acct = tierion.get_account(session, account_name)
             if acct is None:
-                abort(404, "Error: Couldn't find account " + account_id)
+                abort(404, "Error: Couldn't find account " + account_name)
+            return acct.json_describe()
+        elif request.method == "DELETE":
+            # TODO: Add in Authentication
+            acct = tierion.delete_account(session, account_name)
+            if acct is None:
+                abort(404, "Error: Couldn't find account " + account_name)
+            return "Account deleted"
 
     @app.route('/api/v1/login', methods=['POST'])
     def login():

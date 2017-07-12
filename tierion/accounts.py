@@ -24,8 +24,16 @@ def create_account(session, name, email, full_name, secret, do_commit=True):
     return user
 
 
-def get_account(session, account_id):
-    query = session.query(Account).filter(Account.id == account_id)
+def get_account(session, account_id=None, account_name=None):
+    query = session.query(Account)
+
+    if account_id is not None:
+        query.filter(Account.id == account_id)
+    elif account_name is not None:
+        query.filter(Account.name == account_name)
+    else:
+        logging.error("Can't query for ID and name, only one allowed")
+        return None
 
     if len(query.all()) == 1:
         return query.all()[0]

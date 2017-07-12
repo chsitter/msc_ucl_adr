@@ -1,8 +1,9 @@
 .DS_Store
 .idea
+tierion.db
+ethereum_testnet
 *.iml
 __pycache__
-tierion.db
 *.aux
 *.bbl
 *.blg
