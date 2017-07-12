@@ -1,4 +1,16 @@
+.DS_Store
 .idea
 *.iml
 __pycache__
 tierion.db
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.tex.latexmain
+*.fls
+*.lof
+*.log
+*.lot
+*.pdf
+*.toc
