@@ -12,7 +12,8 @@ In order to run the server, the following steps are required:
 4. Run the server `python main.py`
 
 ## API Spec and example use
-All the functionality is exposed via a REST API that is designed to be an exact copy of the API specified by [Tierion](https://tierion.com/), for more complete examples on how to use the API please refer to their API docs. 
+All the functionality is exposed via a REST API that is designed to be an exact copy of the API specified by [Tierion](https://tierion.com/), for more complete examples on how to use the API please refer to their API docs.
+Every Request must include the two custom headers `X-Username: <email>` and `X-Api-Token: <api_token>`. The API token can be retrieved via the user API.
 
 ### User management
 The server exposes rest endpoints to manage user accounts, the supported operations are as follows:
@@ -72,7 +73,7 @@ The server exposes REST endpoints to for datastore management
     curl -X GET \ 
     -H "X-Username: adam@bdam.net" \
     -H "X-Api-Key: a84d1cc06b760cfc7fac01677062c4d920bceb5c5639886cbdabb86deadbc22209aed277650a87a08b0187e2cf112dc37f5d062b6da836128c2b4e16b00d8216" \
-    `http://127.0.0.1:5000/api/v1/datastores/1
+    http://127.0.0.1:5000/api/v1/datastores/1
     ```
 
 * **Create Datastore:** `POST` - `http://127.0.0.1:5000/api/v1/datastores`
@@ -155,7 +156,7 @@ The server exposes REST endpoints to manage records
     curl -X GET \
     -H "X-Username: adam@bdam.net" \
     -H "X-Api-Key: a84d1cc06b760cfc7fac01677062c4d920bceb5c5639886cbdabb86deadbc22209aed277650a87a08b0187e2cf112dc37f5d062b6da836128c2b4e16b00d8216" \
-    `http://127.0.0.1:5000/api/v1/records?datastoreId=1
+    http://127.0.0.1:5000/api/v1/records?datastoreId=1
     ```
 
 * **Get Record:** `GET` - `http://127.0.0.1:5000/api/v1/records/<id>`
@@ -165,7 +166,7 @@ The server exposes REST endpoints to manage records
     curl -X GET \
     -H "X-Username: adam@bdam.net" \
     -H "X-Api-Key: a84d1cc06b760cfc7fac01677062c4d920bceb5c5639886cbdabb86deadbc22209aed277650a87a08b0187e2cf112dc37f5d062b6da836128c2b4e16b00d8216" \
-    `http://127.0.0.1:5000/api/v1/records/1
+    http://127.0.0.1:5000/api/v1/records/1
     ```
 
 * **Create Record:** `POST` - `http://127.0.0.1:5000/api/v1/records`
