@@ -5,8 +5,7 @@ from flask import Flask
 
 import flask_rest
 import tierion
-from blockchain_anchor.backends.bitcoin_bitcoind import BitcoinIntegration
-from blockchain_anchor.backends.ethereum import EthereumIntegration
+from blockchain_anchor.backends import ethereum
 from tierion import db
 
 if __name__ == "__main__":
@@ -20,7 +19,8 @@ if __name__ == "__main__":
     eth_privkey = "32b4c7dc7c2c26d983a5ddeeb65e35b1f18e0148e30fe1ee58cd56bf7a0e5c1e"
     eth_acct = utils.decode_addr(utils.privtoaddr(eth_privkey))
 
-    eth = EthereumIntegration(eth_privkey, eth_acct, "http://127.0.0.1:8079")
+    eth_svc = ethereum.Web3EthereumService("http://127.0.0.1:8079")
+    eth = ethereum.EthereumIntegration(eth_privkey, eth_acct, eth_svc)
     # btc = BitcoinIntegration("localhost", 18332, "bitcoinrpc", "c8805869db20730a2ddb7f62cfa2745c", "mqCnowcw6K24bqD4Xcio3iync1ziWXEqio")
 
 

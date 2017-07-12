@@ -6,6 +6,8 @@ from bitcoin import *
 from blockchain_anchor.backends import BlockchainIntegration
 
 
+# TODO: Rewrite this file such that the transaction is created locally and we can send a signed TX to any service, like in ethereum
+
 def mk_opreturn(msg, rawtx=None, json=0):
     def op_push(data):
         import struct

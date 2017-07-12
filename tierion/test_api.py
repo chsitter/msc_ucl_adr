@@ -368,6 +368,51 @@ class TestAnchorCheckerFunctions(TestCase):
         assert hashitems[0].confirmations[0] is not None
         assert hashitems[1].confirmations[0] is not None
 
+    def test_post_receipt_is_not_sent_when_disabled(self):
+        hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
+        record.create_record(self.session, self.user.id, self.datastore.id, "foobar0",)
+        called = None
+
+        def test_post_cb(url, receipt):
+            nonlocal called
+            called = (url, receipt)
+
+        _check_queue_fn(lambda _: [("Ethereum", "0xfakeTxId")], 0, 0, post_receipt_cb=test_post_cb)
+        assert called is None
+
+    def test_post_receipt_is_sent_when_enabled(self):
+        datastore_do_post_receipt = datastore.create_datastore(self.session, "testDS", "testGroup", post_receipt_enabled=True, post_receipt_url="https://foobar")
+        hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
+        record.create_record(self.session, self.user.id, datastore_do_post_receipt.id, "foobar0",)
+        called = None
+
+        def test_post_cb(url, receipt):
+            nonlocal called
+            called = (url, receipt)
+
+        _check_queue_fn(lambda _: [("Ethereum", "0xfakeTxId")], 0, 0, post_receipt_cb=test_post_cb)
+        assert called is not None
+        assert called[0] == "https://foobar"
+
+    def test_post_receipt_is_sent_for_correct_records(self):
+        datastore_do_post_receipt = datastore.create_datastore(self.session, "testDS", "testGroup", post_receipt_enabled=True, post_receipt_url="https://foobar")
+        hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
+        record.create_record(self.session, self.user.id, self.datastore.id, "foobar0",)
+        record.create_record(self.session, self.user.id, datastore_do_post_receipt.id, "foobar1",)
+        called = None
+        call_count = 0
+
+        def test_post_cb(url, receipt):
+            nonlocal called
+            nonlocal call_count
+            called = (url, receipt)
+            call_count += 1
+
+        _check_queue_fn(lambda _: [("Ethereum", "0xfakeTxId")], 0, 0, post_receipt_cb=test_post_cb)
+        assert call_count == 1
+        assert called is not None
+        assert called[0] == "https://foobar"
+
 
 class TestUtils(TestCase):
     def setUp(self):
@@ -408,5 +453,3 @@ class TestUtils(TestCase):
         assert len(hashitems) == 1
         receipt = build_chainpoint_receipt(hashitems[0])
         assert len(receipt["anchors"]) == 0
-
-

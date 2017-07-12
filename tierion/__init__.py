@@ -1,3 +1,4 @@
+import json
 import logging
 import sched
 import time
@@ -7,15 +8,23 @@ from threading import Thread
 import merkletools
 import sys
 
+import requests
+
+from blockchain_anchor import util
 from tierion import db
 from tierion.accounts import create_account, delete_account, get_account, login
 from tierion.datastore import create_datastore, update_datastore, delete_datastore, get_datastore
 from tierion.db import Confirmation
 from tierion.record import create_record, delete_record, get_record, RecordState
 from tierion.hashitem import create_hashitem, get_hashitem
+from tierion.util import build_chainpoint_receipt
 
 
-def _check_queue_fn(callback, queue_max_size, record_max_age):
+def send_post_receipt(url, receipt):
+    requests.post(url, data=json.dumps(receipt))
+
+
+def _check_queue_fn(callback, queue_max_size, record_max_age, post_receipt_cb=send_post_receipt):
     logging.debug("Checking queue (max_size: %d, max_age: %d)", queue_max_size, record_max_age)
     session = db.create_session()
 
@@ -24,6 +33,7 @@ def _check_queue_fn(callback, queue_max_size, record_max_age):
     session.rollback()
 
     queued_hashitems = get_hashitem(session, pending=True, for_update=True)
+    receipts = []
 
     if len(queued_hashitems) >= queue_max_size or have_expired_hashitems:
         # sent = callback(queued_hashitems)
@@ -43,12 +53,18 @@ def _check_queue_fn(callback, queue_max_size, record_max_age):
                 if i.id in hashitem_proofs:
                     i.proof = hashitem_proofs[i.id]
                     if i.record is not None:
-                        i.record.status = RecordState.UNPUBLISHED.value[0]  # TODO: why [0]?
+                        i.record.status = RecordState.UNPUBLISHED.value[0]  # TODO: why [0]?            
                     [i.confirmations.append(c) for c in confirmations]
+                    receipts.append((i, build_chainpoint_receipt(i)))
                     session.add(i)
                 else:
                     logging.warning("Ignoring hashitem %s as no proof found", i.id)
             session.commit()
+            
+            for item, receipt in receipts:
+                if item.record is not None:
+                    if item.record.datastore.postReceiptEnabled:
+                        post_receipt_cb(item.record.datastore.postReceiptUrl, receipt)
         else:
             logging.info("Anchoring callback returned no transaction ids, rolling back changes")
             session.rollback()
