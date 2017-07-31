@@ -4,7 +4,38 @@
 \usepackage{graphicx}
 \usepackage{setspace}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{url}
+
+\DeclareMathOperator{\Proplang}{\mathcal{L}(N)}
+\DeclareMathOperator{\proplang}{\ell}
+\DeclareMathOperator{\Propatom}{A}
+\DeclareMathOperator{\propatom}{a}
+\DeclareMathOperator{\Propvar}{F}
+\DeclareMathOperator{\propvar}{f}
+\DeclareMathOperator{\Propdom}{D}
+\DeclareMathOperator{\Predicate}{C}
+\DeclareMathOperator{\Interpretation}{I}
+\DeclareMathOperator{\Ontology}{O}
+\DeclareMathOperator{\Deal}{D}
+\DeclareMathOperator{\deal}{d}
+\DeclareMathOperator{\demand}{\delta}
+\DeclareMathOperator{\offer}{\omega}
+
+
+\DeclareMathOperator{\Statement}{S}
+\DeclareMathOperator{\statement}{s}
+\DeclareMathOperator{\statementtext}{t}
+\DeclareMathOperator{\sentence}{sent}
+\DeclareMathOperator{\Issue}{I}
+\DeclareMathOperator{\issue}{i}
+\DeclareMathOperator{\Party}{P}
+\DeclareMathOperator{\party}{p}
+%\DeclareMathOperator{\Game}{G}
+%\DeclareMathOperator{\game}{g}
+\DeclareMathOperator{\Numparties}{N}
+\DeclareMathOperator{\Constraint}{C}
+\DeclareMathOperator{\constraint}{c}
 
 \pdfimageresolution=600
 % The setspace package lets you use 1.5-sized or double line spacing.
@@ -14,7 +45,7 @@
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
 \title{Alternative Dispute Resolution Using Blockchain Technologies}
-\author{Christoph Sitter 
+\author{Christoph Sitter
 }
     %Supervisor - Prof. Philip Treleaven \\
     %Supervisor - Prof. Tomasz Mloduchowski
@@ -32,16 +63,15 @@
 
 \setstretch{1.0}
 \begin{abstract}
-    This thesis investigates the use of Blockchain based technologies for the field of alternative dispute resolution. It starts by investigating scalability as well as safety guarantees and potential risks involved with blockchains and proposes a framework for automated alternative dispute resolution that enables opposing parties to reach a resolution without the need for a neutral third party. 
+    This thesis investigates the use of Blockchain based technologies for the field of alternative dispute resolution. It starts by investigating scalability as well as safety guarantees and potential risks involved with blockchains and proposes a framework for automated alternative dispute resolution that enables opposing parties to reach a resolution without the need for a neutral third party.
 
     The first part of this work investigates the scalability and safety guarantees provided by blockchains to determine whether the requirements for tamper resistance as well as the potential requirement for transaction confirmation in a timely manner, that litigation sometimes requires, can be fulfilled. The majority of this work then focuses on proposing a blockchain based framework that allows conflicting parties to initiate and resolve a dispute. All interactions are kept in an immutable distributed ledger, the blockchain, for future reference as well as provability of claims and statements made. If no mutually satisfying solution can be found, the interactions and documents used in this process can easily be used as evidence in a formal litigation setting. In addition to providing a framework to facilitate disputes, it investigates finding and optimal resolution via cooperation using game theory as defined by Nash.
 
-    The proposed framework defines all components required to provide an end-to-end system for alternative dispute resolution, designed as individual, stand alone, parts that together form a full system. As in normal litigation processes, the first component proposes a tool for discovery. It defines a way to anchor documents into the blockchain, such that it is possible to prove that evidence provided in the discovery phase was seen as well as signed by all involved parties. This is the equivalent of an escrow without the need for an independent third party. All the agreements are implemented using cryptographic operations, and as these operations require safe keeping of keys, a safe way to manage these is proposed as well. 
+    The proposed framework defines all components required to provide an end-to-end system for alternative dispute resolution, designed as individual, stand alone, parts that together form a full system. As in normal litigation processes, the first component proposes a tool for discovery. It defines a way to anchor documents into the blockchain, such that it is possible to prove that evidence provided in the discovery phase was seen as well as signed by all involved parties. This is the equivalent of an escrow without the need for an independent third party. All the agreements are implemented using cryptographic operations, and as these operations require safe keeping of keys, a safe way to manage these is proposed as well.
     The second component is defined as a state machine that details a generic dispute workflow. It investigates the applicability of smart- as well as dumb contracts to implement the state machine with all it's transitions and proposes a template contract that can be used for disputes that follow the defined process. All the components are implemented as a system prototype and tested on a real-world dispute.
 
 \end{abstract}
 
-\setstretch{1.5}
 \begin{acknowledgements}
 Acknowledge all the things!
 \end{acknowledgements}
@@ -52,7 +82,7 @@ Acknowledge all the things!
 \listoffigures
 \listoftables
 
-
+\setstretch{1.5}
 \chapter{Introduction}
 \label{sec:introduction}
 
@@ -66,10 +96,10 @@ Acknowledge all the things!
     %\end{itemize}
     %In addition to the individual components, a detailed description about the overall architecture of the system as well as a case study using a real case are discussed in this work.
 
- 
 
 
-%The Blockchain, initially developed as the underlying technology for creating a truly decentralised currency, has found adoption in a variety of fields. Despite it's popularity, the technology is still in very early stages and this thesis investigates some of the scalability as well as security risks involved with using blockchains. 
+
+%The Blockchain, initially developed as the underlying technology for creating a truly decentralised currency, has found adoption in a variety of fields. Despite it's popularity, the technology is still in very early stages and this thesis investigates some of the scalability as well as security risks involved with using blockchains.
     %\paragraph*{Problem 1 - Discovery} The first step in every dispute is discovery. Discovery is a pre-trial procedure in which both involved parties can obtain evidence from the other party. Traditionally this is done via lawyers and in a court of law. In our system both parties provide the evidence themselves and anchor it into the Blockchain as a proof that at some point in time they were in possession of the documents. Different cases have different requirements and the system supports anchoring of documents in plain text as well as encrypted versions which the other party will only be able to read if they are given permission or supply documents themselves. The logic behind how documents are shared, encrypted or plain text, is defined in smart contracts.
 
     %\paragraph*{Problem 2 - Dispute} After discovery has been completed, both parties either start an alternative dispute resolution like mediation or go to trial. This system eliminates the need of a third party in this process by directly linking the two opposing parties via a communications channel on the Blockchain. This provides a traceable and immutable ledger over the interactions between the parties. If neither party agrees to a solution this can be taken as evidence for a future court case.
@@ -81,21 +111,24 @@ Acknowledge all the things!
 
 
 %\section{Dispute}
-%backup: Either way there is typically a third, neutral, party involved that decides on the final outcome. This poses a problem as this third party can be seen as biased towards one party and hence not neutral or as not knowledgeable enough in the domain to make an informed and fair decision. 
+%backup: Either way there is typically a third, neutral, party involved that decides on the final outcome. This poses a problem as this third party can be seen as biased towards one party and hence not neutral or as not knowledgeable enough in the domain to make an informed and fair decision.
 
 \chapter{Background and Literature Review}
 \label{sec:bg_lit_review}
+This chapter details technologies used during development of this project as well as cryptographic and theoretical work relevant to this dissertation in section \ref{sec:background} and investigates similar research in section \ref{sec:literature_review}.
 
-\section{Background}
+\section{Background} \label{sec:background}
+This chapter investigates technologies used for as well as relevant to this work.
+
 \subsection{Software development methodology}
 The work for this project was subdivided into three stand-alone components that can be considered milestones in an agile setting. The three phases were anchoring data into the blockchain following the chainpoint standard \cite{chainpoint:vaughan}, a platform that uses smart contracts to allow people to start a dispute and attach evidence to the interactions that will all be held in an immutable ledger on a blockchain to ensure that neither the evidence nor the claims can be tampered with and finally an automated system that takes into account the claims as well as the evidence to suggest an ideal resolution to all involved parties. %TODO: Cite smartsettle or similar
-Jira was used as a project management platform, on which the roadmap was outlined as stories and tasks. Team members followed Scrum as defined by the agile manifesto and the work was split into weekly sprints to have a fast feedback loop as the team was not co-located. 
+Jira was used as a project management platform, on which the roadmap was outlined as stories and tasks. Team members followed Scrum as defined by the agile manifesto and the work was split into weekly sprints to have a fast feedback loop as the team was not co-located.
 
 \subsection{Source control}
-The Git source control facility hosted on the Atlassian Bitbucket infrastructure was used as the version control tool throughout the development process. The project was hosted as a private repository with all member having access to the code. 
+The Git source control facility hosted on the Atlassian Bitbucket infrastructure was used as the version control tool throughout the development process. The project was hosted as a private repository with all member having access to the code.
 
 \subsection{Programming languages}
-For the prototype Python 3 was chosen as the main programming language because of it's flexibility and vast module ecosystem that makes prototyping very fast. In addition to the core language features, the Python module repository provides a multitude of blockchain libraries that create abstractions over the typically low level native APIs. Because of their popularity, the vast community support and the availability of Python modules Bitcoin, detailed in section \ref{sec:background_bitcoin} and Ethereum, detailed in section \ref{sec:background_ethereum} were chosen. 
+For the prototype Python 3 was chosen as the main programming language because of it's flexibility and vast module ecosystem that makes prototyping very fast. In addition to the core language features, the Python module repository provides a multitude of blockchain libraries that create abstractions over the typically low level native APIs. Because of their popularity, the vast community support and the availability of Python modules Bitcoin, detailed in section \ref{sec:background_bitcoin} and Ethereum, detailed in section \ref{sec:background_ethereum} were chosen.
 
 \subsection{Public key cryptography}
 Public key cryptography, sometimes called asymmetric cryptography, is a system which makes use of two distinct keys, a public and a private key. The public key, $K$, can be widely distributed while the private key, $K^{-1}$ must be kept private, as the names suggest. These systems depend on mathematical properties that both keys can be generated easily, but it's computationally intractable to compute the private key, knowing only the public key and encrypted messages $\{m\}_K$. Additionally it is computationally not feasibly to compute $K^{-1}$ or $m$ knowing $\{m\}_K$. Formally, the public key cryptography interface can be defined as [cite DSS lecture]:
@@ -106,7 +139,7 @@ Public key cryptography, sometimes called asymmetric cryptography, is a system w
     \item{Verify: }  $V(K^{-1}, \{m\}_{K^{-1}}, m) \rightarrow \{true, false\}$
 \end{itemize}
 
-While the most popular variants of public key cryptography are the well known RSA and DSA algorithms, as detailed in \cite{RSA:1978:MOD:359340.359342} and [DSA ref needed], elliptic curve cryptography has become more popular in recent years and is the technology used in Bitcoin as well as Ethereum. The main attractiveness of elliptic curve cryptography is that there is currently no sub-exponential algorithm known to solve the discrete logarithm problem for a properly chosen elliptic curve \cite{EllipticCurveOverview}. 
+While the most popular variants of public key cryptography are the well known RSA and DSA algorithms, as detailed in \cite{RSA:1978:MOD:359340.359342} and [DSA ref needed], elliptic curve cryptography has become more popular in recent years and is the technology used in Bitcoin as well as Ethereum. The main attractiveness of elliptic curve cryptography is that there is currently no sub-exponential algorithm known to solve the discrete logarithm problem for a properly chosen elliptic curve \cite{EllipticCurveOverview}.
 
 \subsection{Symmetric key cryptography}
 Symmetric key cryptography as opposed to asymmetric cryptography is a family of algorithms that use the same key $K$ for encryption as well as decryption. While there exists the drawback of involved parties having to share the secret securely, symmetric algorithms typically are more efficient than asymmetric ones [citation needed]. Formally, symmetric key cryptography can be defined as:
@@ -147,7 +180,7 @@ where $\Btcinput$ is the set of transaction inputs and $\Btcoutput$ is the set o
 \subsubsection{Bitcoin transactions}
 A Bitcoin transaction, defines a transfer of ownership, by consuming one or more unused outputs (UTXO \cite{bitcoin_wiki:utxo}) of a previous transaction, and generating new outputs that the receipient can then again consume and so forth. From a technical perspective, a transaction can be seen as state a state transfer function $S' := \delta_{tx}(S, \Btcinput_{tx}, \Btcoutput_{tx})$. where $\Btcinput_{tx}$ defines the inputs of a transaction and $\Btcoutput_{tx}$ the outputs of this transaction. The function semantics are defined to be:
 \begin{equation}
-    \delta_{tx}((\Btcinput, \Btcoutput), \Btcinput_{tx}, \Btcoutput_{tx}) := \begin{cases} 
+    \delta_{tx}((\Btcinput, \Btcoutput), \Btcinput_{tx}, \Btcoutput_{tx}) := \begin{cases}
         (\Btcinput \cup \Btcinput_{tx}, \Btcoutput \cup \Btcoutput_{tx}) & if \Btcinput_{tx} \subseteq \Btcoutput \setminus \Btcinput \\
         (\Btcinput, \Btcoutput) & if \Btcinput_{tx} \not\subseteq \Btcoutput \setminus \Btcinput
     \end{cases}
@@ -175,7 +208,7 @@ Because of the way bitcoins are transferred, a person controlling 1 bitcoin, may
 
 
 \subsection{Ethereum} \label{sec:background_ethereum}
-At the time of writing, Ethereum is the second larges crypto currency in the world. Despite this, ethereum was not designed as a crypto currency, but rather a platform for secure distributed computation based on the principles pioneered by Satoshi Nakamoto. 
+At the time of writing, Ethereum is the second larges crypto currency in the world. Despite this, ethereum was not designed as a crypto currency, but rather a platform for secure distributed computation based on the principles pioneered by Satoshi Nakamoto.
 \subsubsection{Ethereum Transactions}
 \subsubsection{Smart Contracts}
 
@@ -188,10 +221,10 @@ The chainpoint standard aims to be blockchain agnostic and defines receipts for 
 \subsection{Alternative Dispute Resolution}
 When disputes between two parties arise, for example because the customer is not satisfied with the quality of a purchased product and dealing with the trader directly did not lead to a satisfactory resolution, then quite often it is preferable to involve a neutral third party and start one of the many alternative dispute resolution techniques instead of going to court directly. Some of the advantages of alternative dispute resolution methods are that they are generally a lot cheaper, and don't involve the complications that come with having to go to court. \cite{adr_overview:findlaw}
 
-While there do exist countless variants for ADR, the most popular variants are conciliation or mediation, adjudication and arbitration \cite{using_adr:citizensadvice}. 
+While there do exist countless variants for ADR, the most popular variants are conciliation or mediation, adjudication and arbitration \cite{using_adr:citizensadvice}.
 
 \subsubsection{Mediation and conciliation}
-Mediation is a popular technique for disputes and usually takes place before arbitration. It includes an impartial intermediary that helps the involved to find a mutually acceptable settlement. The solution is not binding and the effectiveness of mediation hence depends on the willingness of all involved parties to come to a mutually beneficial settlement. 
+Mediation is a popular technique for disputes and usually takes place before arbitration. It includes an impartial intermediary that helps the involved to find a mutually acceptable settlement. The solution is not binding and the effectiveness of mediation hence depends on the willingness of all involved parties to come to a mutually beneficial settlement.
 
 Conciliation typically happens earlier than mediation and focuses on opening communication channels as well as identifying points of mutual agreement. Mediation on the other hand focuses on finding weaknesses in the involved parties arguments and proposing possible mutually acceptable solutions.
 
@@ -201,7 +234,7 @@ Both methods are completely voluntary and the intermediary does not judge, but h
 Adjudication is a less formal variant of arbitration where an impartial Adjudicator looks at all the written evidence the parties provide and makes a decision. The adjudicator is usually an expert in the field, his decision however is not binding and the problem can be taken to court if the involved parties do not agree with the decision made. \cite{using_adr:citizensadvice}
 
 \subsubsection{Arbitration}
-Arbitration is very similar to litigation in the sense that disputants present their arguments to a neutral third party that then decides on a final and imposable resolution that is enforceable in a court of law. Both parties have to agree upfront that they will abide to the decision made by the intermediary. 
+Arbitration is very similar to litigation in the sense that disputants present their arguments to a neutral third party that then decides on a final and imposable resolution that is enforceable in a court of law. Both parties have to agree upfront that they will abide to the decision made by the intermediary.
 The differences to civil litigation are that the involved parties can choose the third party themselves whereas in the judicial system there is typically very little to no control over who will preside as the judge. Another difference is that arbitration is often chosen as a means to start negotiations before an actual dispute materializes whereas the judicial system usually is preferred afterwards. \cite{adr_overview:findlaw}
 
 Arbitration comes in two variants, private- and judicial arbitration. Private Arbitration, the more popular variant, includes two parties who contractually agree to adhere to the decision made by the arbitrator which usually is a private person chosen by all involved parties upfront. The arbitrators decision is binding. Judicial arbitration is usually court imposed and the decision made by the arbitrator is non-binding, meaning that any party dissatisfied with the decision has the right to formally appeal and take the claim to court. Typically this has to be done within a certain time limit decided upon by the court and if this is exceeded the decision becomes binding just as with private arbitration.
@@ -209,15 +242,15 @@ Arbitration comes in two variants, private- and judicial arbitration. Private Ar
 \subsubsection{Remarks}
 ADR techniques have gained popularity in recent years and there are countless variants of the outlined methods. In all ADR techniques facilitating negotiations between the involved parties plays an important role, but it is important to note that they are not the right choice for all legal disputes. One major factor is that parties involved in ADR usually waive their right to object to evidence that might be inadmissible in a court of law - one example of this is hearsay.
 
-\section{Literature Review and Related Work}
-This section investigates existing services and research that is relevant to the area of blockchain based alternative dispute resolution. 
+\section{Literature Review and Related Work} \label{sec:literature_review}
+This section investigates existing services and research that is relevant to the area of blockchain based alternative dispute resolution.
 
 \section{Blockchain based notary-like services}
-In legal disputes, it is imperative, that guarantees about the existence of documents can be made as well as the ability to proof interactions between parties. In ADR this would typically be a neutral third party, which has, amongst others, notary-like roles. 
+In legal disputes, it is imperative, that guarantees about the existence of documents can be made as well as the ability to proof interactions between parties. In ADR this would typically be a neutral third party, which has, amongst others, notary-like roles.
 
 While the range of services provided by notaries is by far not restricted to the ones mentioned here, for the purpose of this work only two are required. Witnessing and certifying the validity of signatures on documents as well as certifying the authenticity of the document itself. \cite{notary:does_blockchain_notary_work}
 
-The blockchain can satisfy both of these requirements, using arbitrary data embedded into transactions as detailed in chapter \ref{chapter:anchoring_data_into_the_blockchain}, it can be proven that a document existed at a given point in time, and the person that put the document there can proof that it was them putting it there using public/private key cryptography. 
+The blockchain can satisfy both of these requirements, using arbitrary data embedded into transactions as detailed in chapter \ref{chapter:anchoring_data_into_the_blockchain}, it can be proven that a document existed at a given point in time, and the person that put the document there can proof that it was them putting it there using public/private key cryptography.
 
 There do exist a variety of online services attempting to replace notaries using a public blockchain, some popular ones are the following, as taken from \cite{notary:does_blockchain_notary_work}:
 
@@ -233,6 +266,11 @@ There do exist a variety of online services attempting to replace notaries using
 
 While these services come close to providing some of the services of a notary, one major shortcoming is that it is not possible to proof that it was a certain person putting the document there. Stampery propose to use NameCoin\footnote{\url{https://namecoin.org}} to assign an identity to a document, this however has not been implemented or tested yet, and there is no guarantee that a fraudulent attacker couldn't register a fake name to impersonate someone else \cite{notary:does_blockchain_notary_work} \cite{notary:stampery_medium}.
 
+\section{Propositional-Logic Approach to One-Shot Multi Issue Bilateral Negotiation}
+In \cite{Ragone:2006:PAO:1124566.1124569}, Ragone et al propose a pareto optimal framework for one-shot multi issue negotiation between opposing parties. They formally define the process and protocol using propositional logic and illustrate how their formulation can be applied to a real scenario. While the general formulation influenced the dispute protocol proposed in chapter \ref{chapter:dispute}, it is not readily applicable to this work as it involves a third party that has a clear view of the demand and supply sets $D$ and $S$ as well as the reservation sets $R_d$ and $R_s$.
+
+\section{A logic-based axiomatic model of bargaining}
+In \cite{DBLP:journals:corr:ZhangZ14a}, Zhang introduces an axiomatic model for an ordinal bargaining problem and introduces a formalism for specifying the problem mathematically using propositional logic. While the model is only developed for a discrete domain, he devises a mechanism to discretize continuous problem and shows that the solution is close to the Nash Equilibrium. The formalism in chapter \ref{chapter:dispute} is heavily based on this work.
 
 \chapter{Safety guarantees of and attacks on the blockchain}
 
@@ -250,17 +288,17 @@ English law [citation needed\footnote{http://newsroom.howardkennedy.com/disclosu
 
 
 \section{Formalising Disclosure} \label{sec:formalising_disclosure}
-There are many different ways to perform disclosure, and depending on the type of ADR as well as the domain of the dispute, financial, civil etc, the process can vary. In civil litigation full disclosure is usually recommended, while in financial disputes the involved parties may choose not to disclose confidential information to the other party, but only to the intermediary. In this chapter we formally define how disclosure can be performed using blockchain technologies without a third party invovement based on the ADR workflow defined in figure \ref{fig:adr_workflow}.
+There are many different ways to perform disclosure, and depending on the type of ADR as well as the domain of the dispute, financial, civil etc, the process can vary. In civil litigation full disclosure is usually recommended, while in financial disputes the involved parties may choose not to disclose confidential information to the other party, but only to the intermediary. In this chapter we formally define how disclosure can be performed using blockchain technologies without a third party involvement based on the ADR workflow defined in figure \ref{fig:adr_workflow}.
 
 
-Disclosure is merely the claim that a document exist, where the disclosing party has an obligation to produce the document should the other party request inspection of it. This is loosely based on UK civil procedure rules as defined in \cite{justice_gov:civil_procedure_rules}. To perform disclosure without the involvment of a third party, a disclosed document must provide three guarantees:
+Disclosure is merely the claim that a document exist, where the disclosing party has an obligation to produce the document should the other party request inspection of it. This is loosely based on UK civil procedure rules as defined in \cite{justice_gov:civil_procedure_rules}. To perform disclosure without the involvement of a third party, a disclosed document must provide three guarantees:
 \begin{enumerate}
     \item{\textbf{Proof of existence:}} It must be possible for any of the involved parties to proof that a document existed at a certain time in the past. \label{itm:disclosure_document_objectives_existence}
-    
+
     \item{\textbf{Proof of disclosure:}} It must be possible for any involved party to proof that a document was disclosed by another involved party. \label{itm:disclosure_document_objectives_disclosure}
 
     \item{\textbf{Secrecy against evesdropper:}} Secrecy of the document exchanges must be guaranteed, that means that while eavesdroppers may be able to intercept that two parties are communicating, the identity as well as details of the interaction must remain secure. \label{itm:disclosure_document_objectives_evesdrop}
-   
+
     \item{\textbf{Secrecy of confidential information amongs parties:}} It must be possible to obfuscate confidential information such that the counterparty will only know of it's existence and information that is willingly provided. It must also be possible to later on produce the confidential document in a verifiable manner. \label{itm:disclosure_document_objectives_confidential}
 
     \item{\textbf{Proof of identity of involved parties:}} It is desirable for each party to have the ability to proof the identity of the party that has disclosed documents for the purpose of possible follow up formal litigation processes. This is investigated in chapter \ref{chapter:key_management}. [TODO: Figure out if we want that and if so how] \label{itm:disclosure_document_objectives_identification}
@@ -270,7 +308,7 @@ In order to meet the above mentioned objectives while remaining blockchain agnos
 \subsection{Definition of Document} \label{sec:definition_of_document}
 A Document is defined as a composite of the document and cryptographic proofs to meet the objectives set out in the previous section. Formally a document is defined as the quintuple:
 \begin{equation}
-    d := (K_o, H(c), t, S(K_o^{-1}, (K_o, t, H(c))), c) 
+    d := (K_o, H(c), t, S(K_o^{-1}, (K_o, t, H(c))), c)
     \label{eq:disclosure_document}
 \end{equation}
 
@@ -286,7 +324,7 @@ where $r_d$ is the Chainpoint receipt generated by the anchoring system, $K_i$ t
 
 
 \subsection{Definition of the disclosure protocol}
-The disclosure protocol can loosely be defined as a state machine with state 
+The disclosure protocol can loosely be defined as a state machine with state
 \begin{equation}
     S := \{\Psi, R, D | \psi \in \Psi, r \in R, d \in D\}
     \label{eq:disclosure_state_machine}
@@ -311,7 +349,7 @@ This section describes how an adr receipt $\psi$ can be used to meed the objecti
 \begin{enumerate}
     \item{\textbf{Proof of existence:}} The Chainpoint receipt $r$ contains information about the block that $H(d)$ and can hence be used to proof that the document existed before the said block was generated.
     \item{\textbf{Proof of disclosure:}} The ADR receipt $\psi$ contains a signature of the receiving party, proving that they have received the document $d$ included in the receipt. The receiving party has the ability to proof that the receipt is for the document provided.
-    \item{\textbf{Secrecy against evesdropper:}} Assuming the communication channel between the opposing parties is not secure, then encrypting each document with it's unique key provides secrecy against evesdroppers. 
+    \item{\textbf{Secrecy against evesdropper:}} Assuming the communication channel between the opposing parties is not secure, then encrypting each document with it's unique key provides secrecy against evesdroppers.
     \item{\textbf{Secrecy of confidential information amongs parties:}} As all documents are encrypted with a secret key, it is easily possible to send a document to the other party while withholding the key, effectively proving that the document exists but not disclosing it's contents.
     \item{\textbf{Proof of identity of involved parties:}} The outlined protocol provides no guarantees about the identity of parties behind the public keys, this problem is addressed in chapter \ref{chapter:key_management}.
 \end{enumerate}
@@ -326,7 +364,7 @@ This section describes how an adr receipt $\psi$ can be used to meed the objecti
 In the first phase of this project, an open source version of Tierion\footnote{\url{https://tierion.com/}} was implemented that is then used as the framework to produce proof of existence and is available on \url{TODO: figure out where}. The system exposes a REST API equivalent to the one defined by Tierion and aims to be a drop in replacement.
 
 \subsection{Library Design}
-The 
+The
 
 \subsection{Bitcoin}
 \subsection{Ethereum}
@@ -334,23 +372,132 @@ The
 \section{Library and API design}
 
 \chapter{Key Management} \label{chapter:key_management}
-problems with mediation: -- no mediator is smart enough, are they really neutral etc etc
+How can we prove who's behind the public key that we're negotiating with, possible angles are ZCash, Estonian E-residency, cryptographically signed biometric or video tape, potentially aimbrain \url{https://aimbrain.com/} have something that helps
 
-\chapter{Dispute - definition and smart contract proposal}
+\chapter{Dispute - Negotiation using Logic} \label{chapter:dispute}
+After discovery has been completed, and all documents made available, the involved parties enter the dispute phase as illustrated in figure \ref{fig:adr_workflow}, where in the ADR setting the primary goal is to find consensus and a resolution that is a an optimal trade-off between both parties ideal outcome, a pareto optimal solution. This chapter formally defines a dispute as a bilateral negotiation using propositional logic and economic theory and proposes a DSL that can be used for blockchain based, traceable negotiation. Through the formalism proposed in this chapter, it is possible to express demands and offers as logical formulas. Without loss of generality, a simplified marital dispute is used as an example throughout this work, and demands like: "I want the children to reside with me, I want at least $£1500$ in child support and you can have contact with them 1 day a week if you don't bring your new partner" can be negotiated using the proposed formalism.
 
-\section{Dispute as a state machine}
-\section{Smart contract template for dispute}
+\section{Definition of a Dispute}
+Disputes come in a lot of varieties, and it is not possible to define one model that suits them all, there are however some general assumptions as to how a typical dispute works which are used as the underpinnings for this work. According to \cite{Susskind:Logic_of_mediating_values} a typical dispute follows four logical assumptions
+\begin{enumerate}
+    \item{disputants know what they want and have a fallback plan - 'BATNA'\footnote{Best Alternative To Negotiated Agreement}}
+    \item{Even if their demands are much higher than the BATNA, they're eager to negotiate a mutually beneficial deal}
+    \item{after negotiations, they usually agree on a sensible middle ground and}
+    \item{a binding, written agreement is formalised and signed by all participating parties. These four assumptions are used throughout the rest of this work.}
+\end{enumerate}
+
+For the purpose of this work, a dispute is defined as having Documents, Statements, Demands and Offers, as well as utilities that define the importance of demands and offers such that the system can value trade-offs and recommend solutions to the involved parties. In addition to the elements defining a dispute, the following requirements must as well be satisfied by the system.
+\begin{itemize}
+
+    \item{\textbf{Proof of existence:}} Either party needs to be able to proof that the other party has either specified demands that were met by the other party, or proposed an offer tha meets the demand, such that in case of either party attempting further formal litigation, there exists a proof of resolution of the dispute.
+
+    \item{\textbf{Secrecy of utility:}} It may not be in the interest of either party for their opposing side to know their utility function. The system must hence provide a way for the utility function to be either fully or partially private while still providing both parties a way to resolve the dispute.
+
+    \item{\textbf{Independence of third party:}} It must be possible for the system and the participants to progress a dispute without the need for a neutral third party.
+
+    \item{\textbf{Possibility of involving a third party:}} It must be possible to involve a third party (Facilitator, Mediator, Arbitrator) in case the dispute comes to a state where no progress is made. The third party should be able to get access to all interactions that have happened between disputing parties.
+
+    \item{\textbf{Incentivise agreement:}} The system must have a mechanism in place that encourages the involved parties to reach a consensus, as otherwise a party could benefit from delaying the process indefinitely.
+
+    \item{\textbf{Proof of identity of involved parties:}} Both parties need to be able to proof the identity of the other side in order to legally enforce their abiding to the accepted negotiated resolution.
+
+\end{itemize}
+
+\subsection{Formal definition of the dispute framework}
+A dispute can be seen as a negotiation between two parties about issues and can be formally defined in the sense of a Bargaining Game \cite{Nash:bargaining} [TODO: rubenstein] and, in the ideal case, finding a solution that represents a Nash Equilibrium or is Pareto optimal. The formal definition uses a propositional logic extended with concrete domains $\Proplang$ as defined by \cite{Ragone2008} as well as borrows from  \cite{DBLP:journals:corr:ZhangZ14a}, \cite{Bellucci:2004:IAI:1032651.1033678} and [TODO: cite multi lateral hemaissa].
+In this work, parties in a dispute can argue issues traceably using a mechanism similar to statements described in \cite{Bellucci:2004:IAI:1032651.1033678} and use $\Proplang$ to formalise their demands or offers. Demands differ from offers only in their utility definition and what party raised them, demand is defined as raised by the party initiating the dispute and offer by the defending party.
+
+Demands and offers are made up of two types of issues, propositional atoms $\propatom \in \{true, false\}$ and variables $\propvar \in \Propdom_{\propvar}$ where $\Propdom_{\propvar}$ is the numerical domain associated with the variable. Variables are constrained by their domain and a comparison with a constant. These definitions allow to formalise demands and offers like \texttt{resideWithWife$\wedge$(childSupport$\geq$2500)} representing the demands that the wife wants the children to reside with her and child support payments of at least £2500 per month. Conditional demands like \texttt{houseToWife$\Rightarrow$(childSupport$\leq$1000)} representing the fact that if the family home is given to the wife, then child support payments would be less. For completeness, precise definitions, as defined by \cite{Ragone2008} \cite{Baader:1991:SIC:1631171.1631239}, for the above formalization is provided.
+
+\begin{itemize}
+    \item
+        \textbf{Concrete Domains:}\cite{Baader:1991:SIC:1631171.1631239} A concrete domain $\Propdom$ consists of a finite set $\Delta_{\Predicate}(\Propdom)$ of numerical values, and a set of predicates $\Predicate(\Propdom)$ expressing numerical constraints on $\Propdom$.
+   
+        Predicats are always binary operators $\Predicate(\Propdom) := \{\geq, \leq, >, <, =, \neq\}$ with their second argument being a constant in the domain $\Delta_{\Predicate}(\Propdom)$, the domain can represent amounts of money, weekdays, colours etc depending on the requirements\cite{Ragone2008}.
+        
+    \item
+        \textbf{The Language $\Proplang$:}\cite{Ragone2008} Let $\Propatom$ be a set of propositional atoms, and $\Propvar$ a set of pairs $\langle\propvar, \Propdom_{\propvar}$ each made of a feature name and an associated concrete domain $\Propdom_{\propvar}$, and let $k$ be a value in $\Propdom_{\propvar}$. Then the following formulas are in $\Proplang$:
+        \begin{enumerate}
+            \item every atom $\propatom \in \Propatom$ is a formula in $\Proplang$
+            \item if $\langle \propatom, \Propdom_{\propvar} \rangle \in \Propvar, k \in \Propdom_{\propvar}$, and $c \in \{\geq, \leq, >, <, =, \neq\}$ then $(\propvar ck)$ is a formula in $\Proplang$
+            \item if $\psi$ and $\varphi$ are formulas in $\Proplang$ then $\neg\psi$, $\psi \wedge \varphi$ are formulas in $\Proplang$\footnote{Additionally: $\psi \vee \varphi := \neg(\neg\psi\wedge\neg\varphi)$, $\psi\Rightarrow\varphi := \neg\psi\vee\varphi$ and $\psi\Leftrightarrow\varphi := (\psi\Rightarrow\varphi)\wedge(\varphi\Rightarrow\psi)$}
+        \end{enumerate}
+
+    \item
+        \textbf{Interpretation and Models:}\cite{Ragone2008} An interpretation $\Interpretation$ for $\Proplang$ (denoted as a superscript .$^{\Interpretation}$ on it's arguments) is a function that maps each atom in A into a truth value $\propatom^{\Interpretation} \in \{true, false\}$, each feature name $\propvar$ into a value $\propvar^{\Interpretation} \in \Propdom_{\propvar}$, and assigns truth values to formulas as follows:
+       
+        \begin{itemize}
+            \item $(\propvar ck)^{\Interpretation} = true$ iff $\propvar^{\Interpretation}$ is true in $\Propdom_{\propvar}$ and false otherwise
+            \item $(\neg\psi)^{\Interpretation} = true$ iff $\psi^{\Interpretation} = false$, $(\psi\wedge\varphi)^{\Interpretation} = true$ iff both $\psi^{\Interpretation} = true$ and $\varphi^{\Interpretation} = true$, according to truth tables for propositional connectives.
+        \end{itemize}
+        
+        The notation $\Interpretation\models\varphi$ denotes the fact that $\Interpretation$ is a model for $\varphi$ meaning that it assigns $true$ to $\varphi$. $\Interpretation$ is said to be a model for a set of formulas if it assigns true to every formula in the set.
+\end{itemize}
 
 
-\chapter{Resolution}
-\section{Game theoretic view of dispute resolution}
-\section{Definition of actions and resolution}
+In addition to the formalisation for issues, parties must be able to provide statements to either back, or respond to a demand. For the purpose of this work the notion of a statement based on \cite{Bellucci:2004:IAI:1032651.1033678} is defined to allow for traceable negotiation. Formally there are two types of a statement $\statement \in \Statement$ made by a party $\party \in \Party$ containing freetext $\statementtext$, where $\Statement$ is the set containing all statements and $\Party$ the set containing all $\Numparties$ parties participating in the dispute. The two are defined as:
+\begin{equation}
+    \statement_a(\party, \statementtext, \alpha) \mid \alpha \in \Propvar \cup \Propatom \wedge \alpha \neq \varnothing
+    \label{eq:initial_statement}
+\end{equation}
+\begin{equation}
+    \statement_a(\party, \statementtext, \statement_b) \mid a \neq b 
+\end{equation}
+
+Using the above definitions, it is possible to provide statements following issues, called supporting or responding ones as well as supporting, responding and concluding statements following up on previous statements. The five types of statements are defined as:
+
+\begin{enumerate}
+    
+    \item \textbf{Supporting/Responding statement on issue}: A statement, referencing an issue is called a supporting statement, if it is raised by the party benefiting from the demand and a responding one if it is raised by the party hurt by the issue. Formally this could be defined by attaching a label to each atom $\propatom$ and variable $\propvar$ in the language $\Proplang$, but it is not technically necessary to make this distinguishment for the purpose of this work.
+        \begin{equation*}
+            \statement(\party, \statementtext, \alpha) \mid \alpha \in \Propvar \cup \Propatom \wedge \alpha \neq \varnothing
+            \tag{\ref{eq:initial_statement} revisited}
+        \end{equation*}
+
+    \item \textbf{Supporting statement on statement:} Supporting statements to prior ones are defined as responses to an earlier statement made by the same party: 
+        \begin{equation}
+            \statement_a(\party_i, \statementtext, \statement_b(\party_j, \statementtext)) \mid i = j \wedge a \neq b
+        \end{equation}
+   
+    \item \textbf{Responding statement on statement:} Responding statements to prior ones are defined as responses to an earlier statement made by an opposing party:
+        \begin{equation}
+            \statement_a(\party_i, \statementtext, \statement_b(\party_j, \statementtext)) \mid i \neq j \wedge a \neq b
+        \end{equation}
+    
+    \item \textbf{Concluding statement on statement:} As a sequence of statements can be interpreted as a discussion on a certain topic, it is readily obvious that there needs to be a mechanism to conclude the discussion. These concluding statements are defined as:
+        \begin{equation}
+            \statement_a(\party_i, \varnothing, \statement_b(\party_j, \statementtext)) \mid a \neq b
+        \end{equation}
+\end{enumerate}
+
+Building on above definitions, a set $\Statement'$ of unconcluded statements is defined as $\Statement' := \{\statement_a \in \Statement \mid \not\exists \statement_b \colon \statement_b(\_,\_,\statement_s)\}$ which is used to define an agreement.
+
+
+\subsection{Formal definition of Resolution/Agreement}
+A resolution or agreement to a dispute is defined as an interpretation $\Interpretation$ that assigns $true$ to the formulas $\demand$ and $\offer$ representing the demand and offer in combination with an ontology $\Ontology$ represented as a set of formulas in $\Proplang$ describing the domain of the dispute\footnote{An example formula in the ontology could be \texttt{resideWithWife$\Leftrightarrow\neg$resideWithHusband} or \texttt{DiscloseWifeCheatedProof1$\Rightarrow$wifeCheated}}, formally\cite{Ragone2008}:
+\begin{itemize}
+    \item \textbf{Demand:} A demand is a formula $\demand$ in $\Proplang$ such that $\Ontology \cup \{\demand\}$ is satisfiable.
+    \item \textbf{Offer:} An offer is a formula $\offer$ in $\Proplang$ such that $\Ontology \cup \{\demand\}$ is satisfiable.
+    \item \textbf{Agreement:} A possible resolution to the dispute is defined as the set of all Interpretations $\Deal$ satisfying the demand as well as the offer in combination with the ontology $\{\Interpretation \mid \Interpretation \models \Ontology \cup \{\offer, \demand\}\}$. An agreement is then defined as a deal $\deal \in \Deal$ that both parties accept iff $\Statement' = \emptyset$
+\end{itemize}
+
+
+\section{Dispute Protocol and Domain Specific Language}
+In this section, a domain specific language, DSL, as well as a protocol for interaction of parties is described to allow them to traceably and verifiably negotiate issues using blockchain technologies instead of a neutral third party and come to a mutually accepted resolution. Obviously a third party like a mediator has more roles than to act as a notary, which in this system the blockchain does, but it is firmly believed by the author that providing facilities that allow sidestepping a third party and if needed later on in the process consult one or alternatively using game theoretic approaches as described in section \ref{sec:game_theoretic_view}, while not applicable for all types of disputes, does suffice for a wide range.
+
+%A simple example conversation between a Husband and a Wife in a marital dispute could then look something like:
+%$\\s_0(W, “\textnormal{I want child support payments}”) \\
+%s_1(H, "\textnormal{I'm not paying more than £500 a month}", s_0) \\
+%s_2(W, \varnothing, s_1)$
+
+%These discussions and issues are then translated into a propositional language formally defining the demands. In order for this document to be self contained, the definitions of \cite{Ragone2008} are outlined next and subsequently used to define the protocol used between the parties define demands and resolve them.
+
+
+
+\section{Game theoretic view of dispute resolution} \label{sec:game_theoretic_view}
 \section{System design}
 
 \chapter{Experiment - Emulating a real dispute on the prototype}
-\section{Discovery}
-\section{Dispute}
-\section{Resolution}
 
 \bibliographystyle{unsrt}
 \bibliography{bibliography}
