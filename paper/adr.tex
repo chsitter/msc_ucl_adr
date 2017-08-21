@@ -6,6 +6,21 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{url}
+\usepackage{tabularx}
+
+\DeclareMathOperator{\Btcstate}{S}
+\DeclareMathOperator{\Btctransaction}{T}
+\DeclareMathOperator{\btctransaction}{t}
+\DeclareMathOperator{\Btcinput}{I}
+\DeclareMathOperator{\btcinput}{i}
+\DeclareMathOperator{\Btcoutput}{O}
+\DeclareMathOperator{\btcoutput}{o}
+
+\DeclareMathOperator{\Adrreceipt}{R}
+\DeclareMathOperator{\adrreceipt}{r}
+
+\DeclareMathOperator{\Metalang}{\mathcal{L}_m}
+\DeclareMathOperator{\metaop}{\mathcal{o}_m}
 
 \DeclareMathOperator{\Proplang}{\mathcal{L}(N)}
 \DeclareMathOperator{\proplang}{\ell}
@@ -22,6 +37,8 @@
 \DeclareMathOperator{\demand}{\delta}
 \DeclareMathOperator{\offer}{\omega}
 
+\DeclareMathOperator{\nonce}{n}
+
 
 \DeclareMathOperator{\Statement}{S}
 \DeclareMathOperator{\statement}{s}
@@ -31,8 +48,6 @@
 \DeclareMathOperator{\issue}{i}
 \DeclareMathOperator{\Party}{P}
 \DeclareMathOperator{\party}{p}
-%\DeclareMathOperator{\Game}{G}
-%\DeclareMathOperator{\game}{g}
 \DeclareMathOperator{\Numparties}{N}
 \DeclareMathOperator{\Constraint}{C}
 \DeclareMathOperator{\constraint}{c}
@@ -63,12 +78,17 @@
 
 \setstretch{1.0}
 \begin{abstract}
-    This thesis investigates the use of Blockchain based technologies for the field of alternative dispute resolution. It starts by investigating scalability as well as safety guarantees and potential risks involved with blockchains and proposes a framework for automated alternative dispute resolution that enables opposing parties to reach a resolution without the need for a neutral third party.
+    This thesis investigates the applicability of blockchain technologies to Alternative Dispute Resolution. More precisely, designing an Online Dispute Resolution system that is blockchain agnostic as well as does not require a neutral third party as an intermediary. It starts by investigating scalability as well as safety guarantees and potential risks involved with blockchains, then defines a protocol for disclosure using blockchain, describes the design and implementation of a blockchain agnostic anchoring tool developed in the course of this work, briefly outlines associating identities with public keys and develops a protocol for two parties to argue a dispute in a provable and verifiable way using a blockchain agnostic protocol and formalism.
 
-    The first part of this work investigates the scalability and safety guarantees provided by blockchains to determine whether the requirements for tamper resistance as well as the potential requirement for transaction confirmation in a timely manner, that litigation sometimes requires, can be fulfilled. The majority of this work then focuses on proposing a blockchain based framework that allows conflicting parties to initiate and resolve a dispute. All interactions are kept in an immutable distributed ledger, the blockchain, for future reference as well as provability of claims and statements made. If no mutually satisfying solution can be found, the interactions and documents used in this process can easily be used as evidence in a formal litigation setting. In addition to providing a framework to facilitate disputes, it investigates finding and optimal resolution via cooperation using game theory as defined by Nash.
+    \textbf{Safety and performance properties} of blockchain technologies are important to understand. The technology itself has certain limitations with respect to performance and scalability as well as safety and part one if this work outlines the safety guarantees provided as well as the scalability considerations and problems with current incarnations of blockchain technologies. The design of the ADR system developed in this work is influenced by these properties as tamper resistance requirements as well as timely confirmations are a requirement in litigation.
 
-    The proposed framework defines all components required to provide an end-to-end system for alternative dispute resolution, designed as individual, stand alone, parts that together form a full system. As in normal litigation processes, the first component proposes a tool for discovery. It defines a way to anchor documents into the blockchain, such that it is possible to prove that evidence provided in the discovery phase was seen as well as signed by all involved parties. This is the equivalent of an escrow without the need for an independent third party. All the agreements are implemented using cryptographic operations, and as these operations require safe keeping of keys, a safe way to manage these is proposed as well.
-    The second component is defined as a state machine that details a generic dispute workflow. It investigates the applicability of smart- as well as dumb contracts to implement the state machine with all it's transitions and proposes a template contract that can be used for disputes that follow the defined process. All the components are implemented as a system prototype and tested on a real-world dispute.
+    \textbf{Discovery} is the pre-dispute phase of litigation and describes the process in which documents are disclosed to the other party.\footnote{For the purpose of this work this choice of terminology is used throughout, under the context of civil litigaton in England and Wales, the term Disclosure is used instead of Discovery.} In the second part of this paper, a blockchain agnostic protocol for disclosue is designed as well as an open-source version of the Tierion software offering is developed for use as a blockchain agnostic anchoring utility.
+
+    \textbf{Key Management} is a broad topic on it's own and includes Key generation, key storage and associating identity with keys amongs others. Because parties in the context of blockchains are represented by public keys, it is important to be able to proof the identity of an entity behind a public key. While this work does not focus on this part of the system, it briefly outlines options for associating identity with public keys.
+
+    \textbf{Dispute} can be seen as negotiation between parties over certain issues or resources that they wish to divide up evenly. In this work a system is designed, that allows parties to argue over issues using blockchain technologies while not requiring a third party to verify certain statements have been made and agreement has been reached. This works by keeping all interactions in the immutable ledger a blockchain is for future reference. If no mutually satisfying solution can be found, the interactions and documents used in this process can easily be used as evidence in a formal litigation setting. In addition to providing a framework to facilitate disputes, it investigates negotiation support without the need for a third party based on game theoretic approaches as defined by Nash and expanded on by Rubenstein.
+
+    The proposed framework defines all components required to provide an end-to-end system for alternative dispute resolution, designed as individual, stand alone, parts that together form a full system and concludes with a discussion about the problems of the system design as well as future work to address these issues.
 
 \end{abstract}
 
@@ -85,6 +105,13 @@ Acknowledge all the things!
 \setstretch{1.5}
 \chapter{Introduction}
 \label{sec:introduction}
+
+\section{Research Motivations}
+
+\section{Research Objectives}
+\section{Research Outcomes}
+\section{Dissertation Structure}
+\section{Contributions to Science}
 
     %TODO: good blog with overview for into? https://ftalphaville.ft.com/2016/04/29/2160502/decentralised-courts-and-blockchains/
 
@@ -131,7 +158,7 @@ The Git source control facility hosted on the Atlassian Bitbucket infrastructure
 For the prototype Python 3 was chosen as the main programming language because of it's flexibility and vast module ecosystem that makes prototyping very fast. In addition to the core language features, the Python module repository provides a multitude of blockchain libraries that create abstractions over the typically low level native APIs. Because of their popularity, the vast community support and the availability of Python modules Bitcoin, detailed in section \ref{sec:background_bitcoin} and Ethereum, detailed in section \ref{sec:background_ethereum} were chosen.
 
 \subsection{Public key cryptography}
-Public key cryptography, sometimes called asymmetric cryptography, is a system which makes use of two distinct keys, a public and a private key. The public key, $K$, can be widely distributed while the private key, $K^{-1}$ must be kept private, as the names suggest. These systems depend on mathematical properties that both keys can be generated easily, but it's computationally intractable to compute the private key, knowing only the public key and encrypted messages $\{m\}_K$. Additionally it is computationally not feasibly to compute $K^{-1}$ or $m$ knowing $\{m\}_K$. Formally, the public key cryptography interface can be defined as [cite DSS lecture]:
+Public key cryptography, sometimes called asymmetric cryptography, is a system which makes use of two distinct keys, a public and a private key. The public key, $K$, can be widely distributed while the private key, $K^{-1}$ must be kept private, as the names suggest. These systems depend on mathematical properties that both keys can be generated easily, but it's computationally intractable to compute the private key, knowing only the public key and encrypted messages $\{m\}_K$. Additionally it is computationally not feasibly to compute $K^{-1}$ or $m$ knowing $\{m\}_K$. Formally, the public key cryptography interface can be defined as: \cite{BKarp}
 \begin{itemize}
     \item{Encrypt: } $E_p(K, m) \rightarrow \{m\}_K$
     \item{Decrypt: } $D_p(K^{-1}, \{m\}) \rightarrow m$
@@ -142,7 +169,7 @@ Public key cryptography, sometimes called asymmetric cryptography, is a system w
 While the most popular variants of public key cryptography are the well known RSA and DSA algorithms, as detailed in \cite{RSA:1978:MOD:359340.359342} and [DSA ref needed], elliptic curve cryptography has become more popular in recent years and is the technology used in Bitcoin as well as Ethereum. The main attractiveness of elliptic curve cryptography is that there is currently no sub-exponential algorithm known to solve the discrete logarithm problem for a properly chosen elliptic curve \cite{EllipticCurveOverview}.
 
 \subsection{Symmetric key cryptography}
-Symmetric key cryptography as opposed to asymmetric cryptography is a family of algorithms that use the same key $K$ for encryption as well as decryption. While there exists the drawback of involved parties having to share the secret securely, symmetric algorithms typically are more efficient than asymmetric ones [citation needed]. Formally, symmetric key cryptography can be defined as:
+Symmetric key cryptography as opposed to asymmetric cryptography is a family of algorithms that use the same key $K$ for encryption as well as decryption. While there exists the drawback of involved parties having to share the secret securely, symmetric algorithms typically are more efficient than asymmetric ones \cite{BKarp}. Formally, symmetric key cryptography can be defined as:
 \begin{itemize}
     \item{Encrypt: } $E_s(K, m) -> c$
     \item{Decrypt: } $D_s(K, c) -> m$
@@ -150,7 +177,7 @@ Symmetric key cryptography as opposed to asymmetric cryptography is a family of 
 Symmetric key algorithms are usually used in stream- or block ciphers for use in secure communication channels like SSL/TLS. In the cryptocurrency domain they don't typically aren't used.
 
 \subsection{Cryptographic hash functions}
-Bitcoin, described in section \ref{sec:background_bitcoin} as well as Ethereum, described in section \ref{sec:background_ethereum}, at the time of this writing use cryptographic hash functions, SHA-256 to be precise, for the identification of blocks etc. A cryptographic hash function $H$ is a function that takes a plain text $m$ as input and produces an alphanumeric output of fixed length $y = H(m)$. Ideal hash functions should have the following properties [cite DSS \& https://simple.wikipedia.org/wiki/Cryptographic\_hash\_function]:
+Bitcoin, described in section \ref{sec:background_bitcoin} as well as Ethereum, described in section \ref{sec:background_ethereum}, at the time of this writing use cryptographic hash functions, SHA-256 to be precise, for the identification of blocks etc. A cryptographic hash function $H$ is a function that takes a plain text $m$ as input and produces an alphanumeric output of fixed length $y = H(m)$. Ideal hash functions should have the following properties \cite{BKarp} \cite{wiki:cryptographic_hash_fn}:
 \begin{itemize}
     \item{Calculating $H(x)$ is computationally easy}
     \item{$H()$ is preimage resistant: } \\ It is computationally infeasible to find $m$ given $y$ and $H$
@@ -163,22 +190,16 @@ Write up the maths and find some good illustrations
 
 
 
-\let\Btctransaction T
-\let\btctransaction t
-\let\Btcinput I
-\let\btcinput i
-\let\Btcoutput O
-\let\btcoutput o
 
 \subsection{Bitcoin} \label{sec:background_bitcoin}
-It is hard, if not impossible to understate the impact Bitcoin had on the world. Not only has it entirely re-invented how people view a currency, but also introduced blockchain as a technology, without which none of this work would be possible. Bitcoin was designed as a decentralised currency, without a central authority. The main problem it solves is the so called double spending problem, where in theory, the same bitcoin could be spent multiple times without the payee being aware of it. This is solved by timestamping transactions into an immutable distributed ledger, which is realised as an ongoing chain of hash-based proof-of-work. From a technical standpoint, bitcoin can be viewed as a state transition system, operating on a state $S$ defined as:
+It is hard, if not impossible to understate the impact Bitcoin had on the world. Not only has it entirely re-invented how people view a currency, but also introduced blockchain as a technology, without which none of this work would be possible. Bitcoin was designed as a decentralised currency, without a central authority. The main problem it solves is the so called double spending problem, where in theory, the same bitcoin could be spent multiple times without the payee being aware of it. This is solved by timestamping transactions into an immutable distributed ledger, which is realised as an ongoing chain of hash-based proof-of-work. From a technical standpoint, bitcoin can be viewed as a state transition system, operating on a state $\Btcstate$ defined as:
 \begin{equation}
-    S := (\Btcinput, \Btcoutput)
+    \Btcstate := (\Btcinput, \Btcoutput)
 \end{equation}
 where $\Btcinput$ is the set of transaction inputs and $\Btcoutput$ is the set of transaction outputs as detailed in the next section.
 
 \subsubsection{Bitcoin transactions}
-A Bitcoin transaction, defines a transfer of ownership, by consuming one or more unused outputs (UTXO \cite{bitcoin_wiki:utxo}) of a previous transaction, and generating new outputs that the receipient can then again consume and so forth. From a technical perspective, a transaction can be seen as state a state transfer function $S' := \delta_{tx}(S, \Btcinput_{tx}, \Btcoutput_{tx})$. where $\Btcinput_{tx}$ defines the inputs of a transaction and $\Btcoutput_{tx}$ the outputs of this transaction. The function semantics are defined to be:
+A Bitcoin transaction, defines a transfer of ownership, by consuming one or more unused outputs (UTXO \cite{bitcoin_wiki:utxo}) of a previous transaction, and generating new outputs that the receipient can then again consume and so forth. From a technical perspective, a transaction can be seen as state a state transfer function $\Btcstate' := \delta_{tx}(\Btcstate \Btcinput_{tx}, \Btcoutput_{tx})$. where $\Btcinput_{tx}$ defines the inputs of a transaction and $\Btcoutput_{tx}$ the outputs of this transaction. The function semantics are defined to be:
 \begin{equation}
     \delta_{tx}((\Btcinput, \Btcoutput), \Btcinput_{tx}, \Btcoutput_{tx}) := \begin{cases}
         (\Btcinput \cup \Btcinput_{tx}, \Btcoutput \cup \Btcoutput_{tx}) & if \Btcinput_{tx} \subseteq \Btcoutput \setminus \Btcinput \\
@@ -188,18 +209,18 @@ A Bitcoin transaction, defines a transfer of ownership, by consuming one or more
 This means that only transactions, that reference available outputs are considered valid transactions and are hence added to the state. This is an oversimplification of how transactions work and are executed, and it is worth pointing out that a UTXO can only be consumed if the transaction contains proof that it was issued by the holder of the private key associated with the public key in the output. So called coinbase transactions\footnote{Transactions that generate coins without inputs} are also left out, the curious reader however is encouraged to read the bitcoin developer wiki on transactions \cite{bitcoin_wiki:transactions}.
 
 \subsubsection{Timestamping, proof-of-work and mining}
-The main problem bitcoin solves is the so called double-spending problem, where two transactions could be spending the same inputs without the payee noticing. To resolve this, it is imperative that there exists a total ordering of transactions, such that all nodes eventually reach the same state $S$.
+The main problem bitcoin solves is the so called double-spending problem, where two transactions could be spending the same inputs without the payee noticing. To resolve this, it is imperative that there exists a total ordering of transactions, such that all nodes eventually reach the same state $\Btcstate$.
 
-The solution bitcoin proposes is the so-called blockchan, an ever growing history of blocks containing transactions. A block can loosely be defined as:
+The solution bitcoin proposes is the so-called blockchain, an ever growing history of blocks containing transactions. A block can loosely be defined as:
 \begin{equation}
-    B_t := ((H(B_{t-1}, H(n + T), n), T)
+    B_t := ((H(B_{t-1}, H(\nonce + T)), \nonce, T)
 \end{equation}
-where $H(B_{t-1})$ is the previous block's hash, $H(n + T)$ is the current block's hash, computed from a random nonce $n$ and the transactions contained in this block $T$. This list of transaction containing blocks defines the order in which transactions have occurred. In case that multiple nodes create blocks simultaneously and create a fork on the chain, one fork will eventually outgrow the other and be accepted as the sole truth.
+where $H(B_{t-1})$ is the previous block's hash, $H(\nonce + T)$ is the current block's hash, computed from a random nonce $\nonce$ and the transactions contained in this block $T$. This list of transaction containing blocks defines the order in which transactions have occurred. In case that multiple nodes create blocks simultaneously and create a fork on the chain, one fork will eventually outgrow the other and be accepted as the only true history wiping the shorter branch from existence.
 
 In this simplistic view, it would be easy for an attacker to create a chain that is longer than the existing chain and hence invalidate existing transactions, this problem is solved with the so-called proof-of-work scheme.
 
-\subsection{Proof of Work} \label{sec:background_bitcoin:proof_of_work}
-As defined in the previous section, each block contains $H(n + T)$, a hash of the nonce and transactions contained in the block. Proof of work is simply the operation of finding $H(n + T) < threshold$, which due to the underlying cryptographic properties can only be computed by sequentially incrementing the nonce and trying every possible nonce until a valid hash code is produced. In bitcoin the threshold varies and is re-adjusted every 2016 blocks to have an average time of 10 minutes for a new block to be generated. This essentialy means that the longer the chain grows, the harder it is to re-generate it, and it can only be outgrown by a malicious attacker if they control a majority of the networks CPU power.
+\subsubsection{Proof of Work} \label{sec:background_bitcoin:proof_of_work}
+As defined in the previous section, each block contains $H(\nonce + T)$, a hash of the nonce and transactions contained in the block. Proof of work is simply the operation of finding $H(\nonce + T) < threshold$, which due to the underlying cryptographic properties can only be computed by sequentially incrementing the nonce $\nonce$ and trying every possible nonce until a valid hash code is produced. In bitcoin the threshold varies and is re-adjusted every 2016 blocks to have an average time of 10 minutes for a new block to be generated. This essentialy means that the longer the chain grows, the harder it is to re-generate it, and it can only be outgrown by a malicious attacker if they control a majority of the networks CPU power.
 
 Because of this proof-of-work scheme, creating a block costs significant CPU time and hence electricity. To incentivise people to put in the investment as well as time, the creator of a new block is rewarded with some bitcoins\footnote{This is somewhat similar to gold miners digging for gold and is hence called mining.} \cite{bitcoin:satoshi}
 
@@ -208,7 +229,7 @@ Because of the way bitcoins are transferred, a person controlling 1 bitcoin, may
 
 
 \subsection{Ethereum} \label{sec:background_ethereum}
-At the time of writing, Ethereum is the second larges crypto currency in the world. Despite this, ethereum was not designed as a crypto currency, but rather a platform for secure distributed computation based on the principles pioneered by Satoshi Nakamoto.
+At the time of writing, Ethereum is the second larges crypto currency in the world. Despite this, ethereum was not designed as a crypto currency, but rather a platform for secure distributed computation, sometimes referred to as world computer, based on the principles pioneered by Satoshi Nakamoto.
 \subsubsection{Ethereum Transactions}
 \subsubsection{Smart Contracts}
 
@@ -245,7 +266,7 @@ ADR techniques have gained popularity in recent years and there are countless va
 \section{Literature Review and Related Work} \label{sec:literature_review}
 This section investigates existing services and research that is relevant to the area of blockchain based alternative dispute resolution.
 
-\section{Blockchain based notary-like services}
+\subsection{Blockchain based notary-like services}
 In legal disputes, it is imperative, that guarantees about the existence of documents can be made as well as the ability to proof interactions between parties. In ADR this would typically be a neutral third party, which has, amongst others, notary-like roles.
 
 While the range of services provided by notaries is by far not restricted to the ones mentioned here, for the purpose of this work only two are required. Witnessing and certifying the validity of signatures on documents as well as certifying the authenticity of the document itself. \cite{notary:does_blockchain_notary_work}
@@ -266,25 +287,68 @@ There do exist a variety of online services attempting to replace notaries using
 
 While these services come close to providing some of the services of a notary, one major shortcoming is that it is not possible to proof that it was a certain person putting the document there. Stampery propose to use NameCoin\footnote{\url{https://namecoin.org}} to assign an identity to a document, this however has not been implemented or tested yet, and there is no guarantee that a fraudulent attacker couldn't register a fake name to impersonate someone else \cite{notary:does_blockchain_notary_work} \cite{notary:stampery_medium}.
 
-\section{Propositional-Logic Approach to One-Shot Multi Issue Bilateral Negotiation}
-In \cite{Ragone:2006:PAO:1124566.1124569}, Ragone et al propose a pareto optimal framework for one-shot multi issue negotiation between opposing parties. They formally define the process and protocol using propositional logic and illustrate how their formulation can be applied to a real scenario. While the general formulation influenced the dispute protocol proposed in chapter \ref{chapter:dispute}, it is not readily applicable to this work as it involves a third party that has a clear view of the demand and supply sets $D$ and $S$ as well as the reservation sets $R_d$ and $R_s$.
+\subsection{Online dispute Resolution and Negotiation support systems}
+Since the advent of online commerce, online dispute resolution tools have become more and more important and popular as well, one of the largest is Ebay, settling disputes between buyers and sellers. \cite{deffains2005efficiency} According to \cite{Lodder:ORD_system_design} there are three types of ODR concepts, mediation done exclusively online, mediation of e-commerce disputes and mediation using electronic media like video conferencing. This work focuses exclusively on the first part, ADR done exclusively online.
 
-\section{A logic-based axiomatic model of bargaining}
-In \cite{DBLP:journals:corr:ZhangZ14a}, Zhang introduces an axiomatic model for an ordinal bargaining problem and introduces a formalism for specifying the problem mathematically using propositional logic. While the model is only developed for a discrete domain, he devises a mechanism to discretize continuous problem and shows that the solution is close to the Nash Equilibrium. The formalism in chapter \ref{chapter:dispute} is heavily based on this work.
+In general ODR systems can be seen as negotiation support tools that are either game theory based, heuristic based or argumentation based \cite{Rahwan:2003:AN:1030328.1030332} and existing online services for ADR can always be classified into one or more of these categories. Some examles include SmartSettle, which use a game theoretic approach by defining a collaborative bargaining game \cite{thiessen2003mobile} or DiaLaw, which uses an argumentation based dialoge that supports freetext interactions between parties or Family-Winner \cite{Bellucci:2004:IAI:1032651.1033678}, which combines the dialogue based approach of DiaLaw with a game theoretic approach to dividing issues using trade-off maps.
+
+In \cite{Wooldridge:2000:LN:3006433.3006516}, Parsons and Wooldridge formalise a logic-based language for use in negotiation between agents as well as a meta-language used to define a dispute itself, which is the basis of the formalism used in this paper. Ragone et al \cite{Ragone:2006:PAO:1124566.1124569} propose a pareto optimal framework for one-shot multi isue negotaition between opposing parties. They formally define the process and protocol using propositional logic and illustrate how their formulation can be applied to a real scenario. While the general formulation influenced the dispute protocol proposed in chapter \ref{chapter:dispute}, it is not readily applicable to this work as it involves a third party that has a clear view of the demand and supply sets $D$ and $S$ as well as the reservation sets $R_d$ and $R_s$.
+
+In \cite{DBLP:journals:corr:ZhangZ14a}, Zhang et al introduce an axiomatic model for an ordinal bargaining problem and introduces a formalism for specifying the problem mathematically using propositional logic. While the model is only developed for a discrete domain, they devises a mechanism to discretize continuous problem and shows that the solution is close to the Nash Equilibrium. Interesingly an ordinal approach is chosen over a numerical approach to define the utility as their belief is that it is easier to choose reltive importance of issues rather than assigning absolute values to it.
+
+In \cite{fatima2005comparative} a comparison between evolutionary and game-theoretic approches to negotiation is studied. They argue that while the theoretical approach to bargaining including perfectly rational players works well, boundedly rationl players representing real parties better find the best strategy by trial and error. They argue that the genetic approach to learning a strategy in reality will most likely be prohibitively expensive and game-theoretic approaches may be easier and more feasible to implement.
+
+\subsection{Secure multi-party computation}
+Multi-party computation, or MPC, is a field of applied cryptography where multiple parties attempt to jointly compute a function while learning only the functions output without gaining any knowledge about the other parties inputs. This is a well studied field with differences between the two-party and multi-party case. \cite{goldreich1998secure}
+
+In \cite{du2001secure}, Du et al provide an extensive review of real-life MPC problems and their solutions as well as open problems based on Yao's garbled circuit protocol \cite{yao1982protocols} as well as transformation based approaches. In the garbled circuit setup, any function is converted into a boolean circuit, where each of the gates is obfuscated and shared between parties using oblivious transfer. This approach is not feasible to the ADR system designed in this work as it requires communication between parties during the function evaluation which is not a property the system is supposed to have.
+
+In a more specific setting, linear programs to be precise, it is possible to use a transformation-based approach to solve the problem without sharing the constraints. Mangasarin \cite{Mangasarian2012} proposes a simple reformulation of a linear program using a privately held transformation matrix, which makes use of the property that the feasible region defined by the constraints is not changed by a linear transformation. The approach works by transforming the linear program:
+\begin{equation}
+    \min_{x\in X}c^\prime x \;\textrm{where}\; X ={x \mid Ax=b, x≥0}.
+\end{equation}
+into an equivalent linear program
+\begin{equation}
+    \min_{y\in Y}c^\prime y \;\textrm{where}\; Y ={y \mid BAy=Bb, y≥0}
+\end{equation}
+which is "secure" as it does not expose any of the private data $A$. In the context of this work, a linear program with constraints of the form $Ax\leq b$ is required which can not readily be solved using the same technique, instead the approach taken by Wei Li et al \cite{Li2013} and analysed in \cite{vaidya2009privacy} can be used. The approach is based on transforming inequality constraints into equality constraints through the introduction of slack variables. These slack variables are then transformed using another privately held matrix $D$.
+
 
 \chapter{Safety guarantees of and attacks on the blockchain}
+At the time of writing Bitcoin and Ethereum are the two most popular cryto currencies, while both differ significantly in the way the blockchain is built and maintained, they both suffer from the same basic problems briefly outlined in this chapter
 
 \section{Ellyptic curve cryptography}
-\section{Coping with Moore's law}
+Bitcoin as well as ethereum use elliptic curve signatures, ECDSA, for signing and verifying of transactions on the network. The main reason behind ECC over RSA is that the same safety guarantees can be providing while using significantly shorter keys. Mathematically speaking, ECC Signatures are currently very safe, but there do exist known attacks to compute a private key, one of which is Pollards rho strategy. The curve secp256k1, currently used by bitcoin has no known mathematical flaws, but there are reports of a successfully extracted private key using a side-channeling attack. \cite{EllipticCurveOverview}
+
 \section{Double spending problem and confirmations}
+While there are many use cases beyond it, the main problem blockchains address is the so-called double spending problem. In the original Bitcoin paper it is defined as the problem that a single coin could be spent multiple times, which is a property that must not be possible in a crypto currency. This is problem is addressed using the blockchain as a unique history of transactions that can be verified by every node in the network traversing the history from the beginning to the transaction. One of the problem is when multiple miners create a block at the same time, causing a so-called fork in the blockchain. In this case both blocks could contain inconsistent transactions that double spend a single coin. To this extent, confirmations are defined as the number of blocks anchored after the block containing a transaction. Depending on the importance of the confirmation, typically based on the amount of money transferred, confirmation times can vary between 10 minutes and 1 day (144 blocks). Transactions with 0 confirmations are fairly easily reversible as mining ASICs\footnote{Application specific integrated circuits optimised for mining.} can be temporarily overclocked to increase their hashrate and potentially overpower the network enough to create a longer alternative history.
+
+\section{Coping with Moore's law}
+All security properties of a blockchain depend on the fact that mining a new block is it computationally expensive. Moore's law loosely translates to computing power doubling every two years which means that mining a new block will become faster and faster with time. In addition to computers getting faster and faster, as the number of miners grows, the computing power of the network increases and hence the time between blocks would decrease. Bitcoin as well as Ethereum hence define a variable difficulty parameter, that keeps getting adjusted to keep the time between blocks a constant. In Bitcoin, every 2016 blocks the difficulty is adjusted to keep an average of 10 Minutes between blocks\cite{bitcoin_wiki:difficulty}, whereas in ethereum the average block time is set to be between 10 and 19 seconds and adjustment takes place every time the difference between a block and it's parent is $<10$ or $>20$ seconds\cite{ethereum_wiki:homestead}. This blocktime can essentially be seen as a heartbeat of the network and ensures that there can't be any forks maintained to double-spend coins unless the adversary holds more than $51\%$ of the networks CPU power.
+
 \section{The 51\% attack}
+Because of the way bitcoin and ethereum are designed, it is possible for forks to happen, whenever multiple miners mine a block simultaneously for the same parent. This means that there exist two possible histories of transactions which would theoretically allow a person to double spend a coin or revert their transactions after the payee believes they have received the funds. If a malicious miner holds more than 51\% of the CPU power of the whole network, then they will be able to outpace the rest of the network by mining more blocks than everybody else combined. In this scenario, the adversary can rewrite historic transactions by simply creating a fork of the network starting from a history they like. Once they have grown their own fork longer than the "real" history of the network, all nodes in the system will accept the longest chain as the true chain effectively undoing all transactions that have happened on the real chain. While this is not an easy thing to achieve, it needs to be pointed out that mining pools pose such a threat to the current system as they accumulate a significant portion of hashpower. In case of bitcoin, one mining pool, at the time of writing, has enough hash power to veto every decision made by the community.
+
 \section{Forks and implications on security}
+In addition to temporary forks on the blockchain that happen regularly, the technology itself needs to evolve to tackle scalability or security issues. Changes in the software, called forks, can have different implications on the protocol and are categorised into the following three types\cite{coindesk:bitcoin_forks}:
+
+\begin{itemize}
+    \item\textbf{Soft Fork:} A soft fork is a backwards compatible protocol change, e.g. the reduction of block sizes from 1MB to 500KB. In this case, nodes running the old software will consider blocks created by the new software as valid, but nodes running the new software will reject blocks mined by the old one. For this reason, soft forks require a majority of hash power as otherwise the new chain can get overpowered and orphaned by the old nodes.
+
+    \item\textbf{User activated Soft Fork:} In contrast to standard soft forks, this is the notion of a change that is championed by uses running full nodes rather than the developers. In order for this to succeed, the initiators of the idea will need to gather a majority of hash power for the change to get implemented and adopted.
+
+    \item\textbf{Hard Fork:} In contrast to a soft fork, a hard fork is not backwards compatible. Old nodes would reject blocks mined by nodes running the new version of the software and are forced to update to the later version to continue mining. If a significant portion of the network decides against the change, then two separate chains are created as has happened with Ethereum and Ethereum Classic or Bitcoin and Bitcoin Cash.
+\end{itemize}
+
 \section{Mining and the tragedy of the commons}
+In economic theory, the tragedy of the commons \cite{wikipedia:tragedy_of_the_commons} is a situation where individuals acting independently in their self-interest behave contrary to the common goal of the community by depleting the resource through their collective action. This phenomenon can hypothetically occur in Bitcoin in the far future when the block reward goes near zero. Bitcoin defines an upper limit on the number of coins in circulation and reduces the number of coins awarded to each block to do so. This in turn can lead to a situation where mining a block is no longer profitable as miners will include transactions with low fees as the overhead cost is marginal incentivising people to include lower and lower transaction fees. This in turn can make miners move on to different blockchains making 51\% attacks more likely.
+
 \section{Transaction throughput}
+While bitcoin specifies a maximum block size of 1MB, which puts a hard limit on the number of transactions being included in a block, Ethereum specifies a gas limit on blocks. According to \url{https://ethstats.net} the gas limit on 20/08/2017 is roughly $6.700.000$. Without going into too much detail, the smallest possible transaction on bitcoin, which comprises one input and two outputs, one for change and one for the payment, has 226 bytes which results in roughly 7 transactions per second throughput at best. In the case of ethereum, there is no theoretical limit on the transaction throughput as miners can increase the gas limit per block if the block is filled with transactions. According to \url{https://etherscan.io} the current best transaction throughput is roughly 20 transactions per second. It is important to notice these limitations as anchoring data into the blockchain is direclty influenced by them.
 
 
 \chapter{Disclosure - Anchoring data into the blockchain} \label{chapter:anchoring_data_into_the_blockchain}
-English law [citation needed\footnote{http://newsroom.howardkennedy.com/disclosure-of-documents-in-international-arbitration-a-solution-for-globalised-trade/}] does not formally define the process of disclosure for ADR, as opposed to a well defined set of rules for formal litigation. The parties involved in the dispute typically agree on a form of ADR as well as the rules they wish to follow. This chapter formally defines disclosure as a state machine and proposes a generic framework for multiple parties to disclose and inspect documents based on cryptographic proofs and guarantees. In order to minimise the dependencies on any particular blockchain, the following definitions all assume no specific underlying blockchain and propose a micro transaction protocol that can be run on top of an existing blockchain without the need for an account with funds to pay transaction fees.
+English law does not formally define the process of disclosure for ADR\footnote{http://newsroom.howardkennedy.com/disclosure-of-documents-in-international-arbitration-a-solution-for-globalised-trade}, as opposed to a well defined set of rules for formal litigation. The parties involved in the dispute typically agree on a form of ADR as well as the rules they wish to follow. This chapter formally defines disclosure as a state machine and proposes a generic framework for multiple parties to disclose and inspect documents based on cryptographic proofs and guarantees. In order to minimise the dependencies on any particular blockchain, the following definitions all assume no specific underlying blockchain and propose a micro transaction protocol that can be run on top of an existing blockchain without the need for an account with funds to pay transaction fees.
 
 
 \section{Formalising Disclosure} \label{sec:formalising_disclosure}
@@ -317,7 +381,7 @@ This quintuple is composed of the public key of the disclosing party $K_o$, a cr
 \subsection{Definition of Receipt} \label{sec:definition_of_receipt}
 Once a document $d$ is generated, a cryptographic hash $H(d)$ is anchored into the blockchain using the system described in section \ref{sec:disclosure_anchor_data}. The anchoring system generates a Chainpoint receipt to proof the existence of a document later on. For the purpose of this work, an ADR receipt is defined as the quadruple:
 \begin{equation}
-    \psi := (r_d, d, K_i, S(K_i^{-1}, (r_d, d, K_i)))
+    \adrreceipt := (r_d, d, K_i, S(K_i^{-1}, (r_d, d, K_i)))
     \label{eq:disclosure_receipt}
 \end{equation}
 where $r_d$ is the Chainpoint receipt generated by the anchoring system, $K_i$ the public key of the party the document was disclosed to and $S(K_i^{-1}, (r_d, d, K_i))$ a cryptographic signature proving that the party holding the private key $K_i^{-1}$ associated with the public key $K_i$ has recieved the document.
@@ -326,70 +390,192 @@ where $r_d$ is the Chainpoint receipt generated by the anchoring system, $K_i$ t
 \subsection{Definition of the disclosure protocol}
 The disclosure protocol can loosely be defined as a state machine with state
 \begin{equation}
-    S := \{\Psi, R, D | \psi \in \Psi, r \in R, d \in D\}
+    S := \{\Adrreceipt, R, D | \adrreceipt \in \Adrreceipt, r \in R, d \in D\}
     \label{eq:disclosure_state_machine}
 \end{equation}
 and state transfer functions $\delta_{add}$, $\delta_{anchor}$, $\delta_{ack}$ modify the state of the system $S' := \delta_x(S) \forall x \in \{add, anchor, ack\}$ and are formally defined as:
 \begin{equation}
-    \{\Psi, R, D \cup d\} := \delta_{add}(\{\Psi, R, D\}, d)
+    \{\Adrreceipt, R, D \cup d\} := \delta_{add}(\{\Adrreceipt, R, D\}, d)
     \label{eq:disclosure_delta_add}
 \end{equation}
 \begin{equation}
-    \{\Psi, R \cup r, D\} := \delta_{anchor}(\{\Psi, R, D\}, d)
+    \{\Adrreceipt, R \cup r, D\} := \delta_{anchor}(\{\Adrreceipt, R, D\}, d)
     \label{eq:disclosure_delta_anchor}
 \end{equation}
 \begin{equation}
-    \{\Psi \cup \psi, R \setminus r, D \setminus d\} := \delta_{ack}(\{\Psi, R, D\}, r)
+    \{\Adrreceipt \cup \adrreceipt, R \setminus r, D \setminus d\} := \delta_{ack}(\{\Adrreceipt, R, D\}, r)
     \label{eq:disclosure_delta_ack}
 \end{equation}
-Informally, $\delta_{add}$ can be seen as preparing the document for anchoring, $\delta_{anchor}$ as producing a proof of existence for the document ad $\delta_{ack}$ as the counter party acknowledging the receipt of the document. After the protocol has completed, both parties are in possession of the receipt $\psi$. This receipt can be used to meet the objectives set in section \ref{sec:formalising_disclosure}, and how this is achieved is described in the following section.
+Informally, $\delta_{add}$ can be seen as preparing the document for anchoring, $\delta_{anchor}$ as producing a proof of existence for the document ad $\delta_{ack}$ as the counter party acknowledging the receipt of the document. After the protocol has completed, both parties are in possession of the receipt $\adrreceipt$. This receipt can be used to meet the objectives set in section \ref{sec:formalising_disclosure}, and how this is achieved is described in the following section.
 
 \subsection{Applicability of the protocol to defined objectives}
-This section describes how an adr receipt $\psi$ can be used to meed the objectives set for the system, in particular:
+This section describes how an adr receipt $\adrreceipt$ can be used to meed the objectives set for the system, in particular:
 \begin{enumerate}
     \item{\textbf{Proof of existence:}} The Chainpoint receipt $r$ contains information about the block that $H(d)$ and can hence be used to proof that the document existed before the said block was generated.
-    \item{\textbf{Proof of disclosure:}} The ADR receipt $\psi$ contains a signature of the receiving party, proving that they have received the document $d$ included in the receipt. The receiving party has the ability to proof that the receipt is for the document provided.
+    \item{\textbf{Proof of disclosure:}} The ADR receipt $\adrreceipt$ contains a signature of the receiving party, proving that they have received the document $d$ included in the receipt. The receiving party has the ability to proof that the receipt is for the document provided.
     \item{\textbf{Secrecy against evesdropper:}} Assuming the communication channel between the opposing parties is not secure, then encrypting each document with it's unique key provides secrecy against evesdroppers.
     \item{\textbf{Secrecy of confidential information amongs parties:}} As all documents are encrypted with a secret key, it is easily possible to send a document to the other party while withholding the key, effectively proving that the document exists but not disclosing it's contents.
     \item{\textbf{Proof of identity of involved parties:}} The outlined protocol provides no guarantees about the identity of parties behind the public keys, this problem is addressed in chapter \ref{chapter:key_management}.
 \end{enumerate}
 
 \begin{figure}
-    \includegraphics[width=1.0\textwidth,trim={.5cm 15cm 7.5cm 1cm},clip]{./figures/adr_workflow.png}
+    \includegraphics[width=1.0\textwidth]{./figures/adr_workflow.png}
     \caption{ADR Workflow}
     \label{fig:adr_workflow}
 \end{figure}
 
+\section{Tierion and the Chainpoint standard}
+Tierion is by far not the only provider of blockchain based notary-like services, they are however one of the more sophisticated ones and to the best of our knowledge the only ones to have defined a public standard for blockchain receipts. Because of this standard as well as their popularity and flexible API the decision was made, to base this library on their system.
+
+It is however important to note, that while Tierion as well as the open source library developed in this work do anchor documents into the blockchain, there is no association between the owner of the document and the document itself apart from the data stored in their database. In order to link an entity, or more precisely a public key, to the document anchored in the blockchain, it would be necessary for everyone who wants to anchor data into the blockchain to have their own account on every blockchain that the system integrates with as well as possess sufficient funds to pay for the transaction fees. In times where bitcoin transaction fees surged to ~5\$ this would be a very expensive and wasteful approach.
+
 \section{Anchoring data into the Blockchain} \label{sec:disclosure_anchor_data}
 In the first phase of this project, an open source version of Tierion\footnote{\url{https://tierion.com/}} was implemented that is then used as the framework to produce proof of existence and is available on \url{TODO: figure out where}. The system exposes a REST API equivalent to the one defined by Tierion and aims to be a drop in replacement.
 
-\subsection{Library Design}
-The
 
-\subsection{Bitcoin}
-\subsection{Ethereum}
-\section{Tierion and the Chainpoint standard}
-\section{Library and API design}
+\subsection{Library Design}
+Conceptionally, Tierion does two things. It provides a document management facility and a mechanism to anchor these documents as well as arbitrary sha256 hashes into the blockchain. These concepts drove the decision to break the library up into two stand-alone components, a document management part with a REST API as well as an anchoring API detailed in the following sections.
+
+\begin{figure}
+    \includegraphics[width=1.0\textwidth]{./figures/tierion_db.png}
+    \caption{OpenTierion Database Design}
+    \label{fig:tierion_database_design}
+\end{figure}
+
+\subsection{Document management Component}
+The document management component that is exposed via a REST API equivalent to the one defined by Tierion uses a database to store account data, documents as well as the information necessary to generate Chainpoint receipts. The database design is illustrated in figure \ref{fig:tierion_database_design} and the tables purposes are defined as:
+
+\begin{itemize}
+    \item \textbf{account:} Holds information about the users account including login information, an api key and information required for a login token.
+
+    \item \textbf{record:} Records in this context represent a document structured as json. The fields are equivalent to the ones defined by the tierion API.
+
+    \item \textbf{datastore:} A Datastore Can be seen as a collection of documents that allows to organize documents and set notifications for when certain actions occur on it.
+
+    \item \textbf{hashitem:} A hashitem is a sha256 hash that is then anchored into the blockchain. It is possible to anchor a sha256 hash directly via a hashitem or anchor a record, where a sha256 hashitem is generated based on it's data.
+
+    \item \textbf{confirmation:} Chainpoint at the time of writing supported two endpoints, Bitcoin and Ethereum. A Confirmation in this context represents information about the transaction the document was anchored in. Multiple confirmations in combination with the HashItem they are associated with hold the information required to build a chainpoint receipt.
+\end{itemize}
+In addition to the document management exposed to users, the library is designed in a way, such that one account is used per backend - more about backend integration in section \ref{sec:opentierion_backends} - to anchor multiple documents across multiple datastores and users. This is done via periodic check for document age and the number of documents pending anchoring. Once either of these thresholds, which are configurable in the API are exceeded, all pending documents are put into a merkle tree and this merkle tree's root is then anchored into the blockchain and associated with the documents referenced in it.
+
+\subsection{OpenTierion REST API} \label{sec:opentierion_rest_api}
+The Tierion API is split into two separate REST APIs, a so called \texttt{Hash API} and a \texttt{Data API}. As compatibility with Tierion was one of the design goals, this open source implementation exposes the exact same API structure. For exact details and examples on how to use it please refer to the online documentation on [TODO: link to the open tierion project], but for completeness, tables \ref{tab:opentierion_hash_api} and \ref{tab:opentierion_data_api} outline the API and operations on it. In addition to these APIs, a user API is exposed too such that it is possible to manage users accounts via the API.
+
+The Hash API is based on the specification on \url{https://tierion.com/docs/hashapi} and outlined in table \ref{tab:opentierion_hash_api}. Every operation on the hash API requires an access token to be supplied as the header \texttt{Authorization: Bearer <token>}. Tokens can be generated using the API. It is worth pointing out that the subscription component of this API was not implemented as part of this work and is left as a future improvement.
+\begin{table}[!htbp]
+    \begin{tabularx}{\textwidth}{| l l l X |}
+        \hline
+        \textbf{REST Endpoint} & \textbf{Type} & \textbf{Required fields} & \textbf{Description} \\
+        \hline
+        v1/auth/token & POST & username, password & Generates an auth token that is valid for one hour. Response includes the token, expiry time and a refresh token. \\
+
+        v1/auth/refresh & POST & refreshToken & Generates a new auth token without supplying username and password again. \\
+
+        v1/hashitems & POST & hash & Queues the hash provided for anchoring into the blockchains. \\
+        \hline
+    \end{tabularx}
+    \caption{OpenTierion Hash API Spec}
+    \label{tab:opentierion_hash_api}
+\end{table}
+
+The Data API is based on the specification on \url{https://tierion.com/docs/dataapi} and outlined in table \ref{tab:opentierion_data_api}. Every request to the Data API must include the header following header fields, where the api key can be obtained using the user API specified in Table \ref{tab:opentierion_user_api}:
+\begin{itemize}
+    \item\texttt{X-Username: youremail@address.com}
+    \item\texttt{X-Api-Key: YourAPIKeyGoesHere}
+\end{itemize}
+It is not required to supply auth credentials to create a user, to delete or query user information however it is required to supply the users email as well as the password as HTTP Basic auth credentials.
+
+
+\begin{table}
+    \begin{tabularx}{\textwidth}{| l l X X |}
+        \hline
+        \textbf{REST Endpoint} & \textbf{Type} & \textbf{Required fields} & \textbf{Description} \\
+        \hline
+		v1/datastores & GET & None & Retrieve all datastores for the current user \\
+
+        v1/datastores/\textless id\textgreater & GET & None & Retrieve the datastore with the specified ID \\
+
+        v1/datastores & POST & name & Create a new DataStore, please refer to online docs for more details. \\
+
+        v1/datastores/\textless id\textgreater & PUT & None & Update the DataStore with the id specified, only supplied fields will be changed \\
+
+        v1/datastores/\textless id\textgreater & DELETE & None & Delete the DataStore with the id specified. \\
+
+        v1/records?\textless query\textgreater & GET & None & Retrieve records that match the query specified. Please refer to online docs for query syntax \\
+
+        v1/records/\textless id\textgreater & GET & None & Retrieve the record with the ID specified. \\
+
+        v1/record & POST & datastoreId & Create a new record associated with a datastore. All other fields will be treated as fields of the record. \\
+
+        v1/records/\textless id\textgreater & DELETE & None & Delete the record with the id specified. \\
+
+        \hline
+    \end{tabularx}
+    \caption{OpenTierion Data API Spec}
+    \label{tab:opentierion_data_api}
+\end{table}
+
+\begin{table}
+    \begin{tabularx}{\textwidth}{| l l X X |}
+        \hline
+        \textbf{REST Endpoint} & \textbf{Type} & \textbf{Required fields} & \textbf{Description} \\
+        \hline
+        v1/accounts & POST & name, email, full\_name, secret & Creates a new account \\
+        v1/accounts/\textless name\textgreater & DELETE & None & Deletes the account \textless name\textgreater, requires HTTP basic auth with email and password  \\
+        v1/accounts/\textless name\textgreater & GET & None & Retrieves account information including API key, requires HTTP basic auth with email and password \\
+        \hline
+    \end{tabularx}
+    \caption{OpenTierion User API Spec}
+    \label{tab:opentierion_user_api}
+\end{table}
+
+\subsection{Blockchain integration Component} \label{sec:opentierion_backends}
+While the data management component allows users to create, manage and queue items for anchoring, the Blockchain integration component is required to actually perform the anchoring. When the library is instanciated, the integration component is registered with the data management component, and whenever documents are ready for anchoring due to them having been queued up for too long or the number of pending documents exceeding a configured threshold, this registered callback is called.
+
+The library provides two main integrations, one for Bitcoin and one for Ethereum, detailed below. On a higher level, each of these integrations is designed to work with a list of services that expose blockchain functionality. In the case of Ethereum two services were implemented, a web3 integration talking to a local Ethereum node as well as an integration with Etherscan\footnote{\url{https://etherscan.io/}} such that it is not required to run a local node. In case of bitcoin, a bitcoind integration was implemented to connect to a locally running node as well as [TODO: figure out which one to use]. Anchoring itself works very differently in Bitcoin than it does in Ethereum as detailed below.
+\begin{itemize}
+    \item \textbf{Bitcoin:} The bitcoin protocol was designed to work for the use-case of running a decentralised currency and it is not readily possible to supply arbitrary data to a transaction. As bitcoin transactions are basically a collection of inputs and outputs, and at least one valid output must be present in the transaction, a way to supply arbitrary data is to create one valid output to send the change back to oneself and additionally create an output with a pubkey script that can never be successfully evaluated and is as such an unspendable output. The pubkey script used for this purpose is called OP\_RETURN\footnote{\url{https://en.bitcoin.it/wiki/OP_RETURN}} and was introduced as a way to effectively burn bitcoins. The signing is done offline with the private key supplied to the integration library. If the private key supplied is a python function, then when a signature is required, the callback is called with the transaction as it's parameter such that integration with a hardware keystore is possible.
+
+    \item \textbf{Ethereum:} As Ethereum was designed with the notion of contract execution via transactions, an Ethereum transaction already contains an arbitrary data field that is typically used to supply function arguments or contracts to the Network. For this reason, anchoring an arbitrary hash is as easy as supplying the sha256 Merkle root as data in a transaction. Transactions are built locally and use the account/private key supplied in the library configuration. The private key supplied can either be a private key in which case the transaction will be signed locally using this private key, or a python function that gets called back with the transaction as an argument such that integration with a hardware keystore for security reasons is possible as well. Once the transaction is signed it is sent to the service and subsequently broadcast to the network. The returned transaction ID is then used to generate a Chainpoint receipt. It is worth noting that the account associated with the private key must have enough funds to pay the transaction fees.
+\end{itemize}
+As already mentioned earlier on, the library is open source and available on [TODO: where?] with more extensive documentation provided online.
+
 
 \chapter{Key Management} \label{chapter:key_management}
-How can we prove who's behind the public key that we're negotiating with, possible angles are ZCash, Estonian E-residency, cryptographically signed biometric or video tape, potentially aimbrain \url{https://aimbrain.com/} have something that helps
+Wikipedia \cite{wiki:key_management} defines Key Management to be the management of cryptographic keys in a cryptosystem, including the generation, exchange, storage, use, destruction and replacement of keys on the user level. While this work does not focus on this aspect of the ADR system, it is important for a participant in the dispute to prove that another party has agreed to a certain resolution. As parties are only identified via their public keys, being able to prove that a public key represents a given entity is a requirement for this system. For completeness, a few possible approaches are outlined in this chapter, including them into this work however is left for future research.
+
+\section{Certificate Based Identification}
+Certificate Authorities are a well established model used in the SSL standard. In this system there would be a set of trusted authorities that have the absolute trust of all parties in the system to not ever be corrupted and not make mistakes. This way, each public key would be associated with a Certificate signed by the CA, or another trusted party that holds a certificate signed by the CA essentially creating a so-called chain of trust. The main problem in this system is that the CA has to be incorruptible, and there exist plenty examples of CA's that issued invalid certificates in the context of SSL.
+
+\section{Identity-Based Cryptosystems}
+Initially proposed by Shamir \cite{shamir1984identity}, Identity-Based Encryption uses arbitraty public keys, allowing for the public key to be e.g. an email address, a phone number or another string identifying the entity behind the key. Using a central, trusted authority, private keys can then be derived from that arbitry string public key. The problem in this setup is that it depends on a central authority holding a private key that must not be kept secret. These schemes have the advantage that they don't require a certificate, as the public key itself already acts as such. Boneh and Franklin \cite{boneh2001identity} and Sakai and Kasahara \cite{sakai2003id} propose IBE schemes for elliptic curves which could hence be used with blockchains.
+
+\section{Cryptographically signed biometrics or video tape}
+A different approach to the identity problem would be to require each participating party to record a video tape of themselves stating who they are and whom they represent, which they then cryptographically sign using their private key and share both, the signature as well as the video tape with the counter party. This way, it is possible to proof that the video tape was signed by the entity holding the private key associated with the public key used to verify the signature. 
+
+\section{Namecoin}
+Namecoin\footnote{\url{https://namecoin.org/}} is a cryptocurrency, more precisely a fork of the bitcoin protocol, that provides a key-value type storage on a blockchain. Using the proof of existence guarantee a blockchain provides, it is possible to register the public key with an identity on the blockchain, essentially providing a globally unique association of the key. While this approach is interesting in it's simplicity, there needs to be some mechanism in place to ensure that the registered information is correct as it cannot be changed.
+
+\section{Estonian e-Residency}
+The last alternative outlined in this paper is the Estonian e-Residency. In 2014, Estonia launched an initiative to support electronic residency as a wider initiative to digitise the government. While e-Residency does not equal citizenship and hence does not include the right to enter the country, it does associate Identity with a key, which can be used in a similar way to the Certificate-Based system, but with a government instead of a CA issuing these. \cite{estonia:eResidency}
 
 \chapter{Dispute - Negotiation using Logic} \label{chapter:dispute}
-After discovery has been completed, and all documents made available, the involved parties enter the dispute phase as illustrated in figure \ref{fig:adr_workflow}, where in the ADR setting the primary goal is to find consensus and a resolution that is a an optimal trade-off between both parties ideal outcome, a pareto optimal solution. This chapter formally defines a dispute as a bilateral negotiation using propositional logic and economic theory and proposes a DSL that can be used for blockchain based, traceable negotiation. Through the formalism proposed in this chapter, it is possible to express demands and offers as logical formulas. Without loss of generality, a simplified marital dispute is used as an example throughout this work, and demands like: "I want the children to reside with me, I want at least $£1500$ in child support and you can have contact with them 1 day a week if you don't bring your new partner" can be negotiated using the proposed formalism.
+After discovery has been completed, and all documents made available, the involved parties enter the dispute phase as illustrated in figure \ref{fig:adr_workflow}. In traditional ODR systems, both parties use a third party service to act as a neutral intermediary, in this chapter a formalism and protocol is defined that partially eliminates the need for this using a blockchains.
+
+The field of multi-agent negotiation is well studied and there does exist a wide range of approaches and techniques to formulate as well as resolve disputes. \cite{Rahwan:2003:AN:1030328.1030332} categorize the different approaches as game theoretic, heuristic based and argumentation based ones. In this work a combination of game theoretic and argumentation based approach is developed. They also point out that neither approach suits all needs and there is no one type that fits all disputes. The rest of this chapter provides formalism for a dispute based on argumentation based approaches from \cite{Lodder:ORD_system_design}, \cite{Bellucci:2004:IAI:1032651.1033678}, \cite{Rahwan:2003:AN:1030328.1030332} and game theoretic ones \cite{Susskind:Logic_of_mediating_values}, \cite{Ragone:2006:PAO:1124566.1124569}, \cite{Ragone2008}, \cite{Wooldridge:2000:LN:3006433.3006516}, \cite{Chevaleyre:2005:NOS:1082473.1082518} as well as a protocol and DSL that is used in the Prototype.
 
 \section{Definition of a Dispute}
-Disputes come in a lot of varieties, and it is not possible to define one model that suits them all, there are however some general assumptions as to how a typical dispute works which are used as the underpinnings for this work. According to \cite{Susskind:Logic_of_mediating_values} a typical dispute follows four logical assumptions
+Disputes come in a lot of varieties, and it is not possible to define one model that suits them all, there are however some general assumptions as to how a typical dispute works which are used as the underpinnings for this work. According to \cite{Susskind:Logic_of_mediating_values} a typical dispute follows four logical assumptions which are also consistent with the requirements posed on an ODR system as defined in \cite{Lodder:ORD_system_design}.
 \begin{enumerate}
-    \item{disputants know what they want and have a fallback plan - 'BATNA'\footnote{Best Alternative To Negotiated Agreement}}
-    \item{Even if their demands are much higher than the BATNA, they're eager to negotiate a mutually beneficial deal}
-    \item{after negotiations, they usually agree on a sensible middle ground and}
-    \item{a binding, written agreement is formalised and signed by all participating parties. These four assumptions are used throughout the rest of this work.}
+    \item{disputants know what they want and have a fallback plan, a "Best Alternative To Negotiated Agreement" - BATNA}
+    \item{Even if their demands are much higher than the BATNA, they're eager to negotiate a mutually beneficial deal which should be supported by the negotiation tool}
+    \item{negotiate on issues and eventually reach a middle ground, that in the ODR setting is typically a solution proposed by the system using compensation/trade-off strategies}
+    \item{a binding, written agreement is formalised and signed by all participating parties.}
 \end{enumerate}
-
-For the purpose of this work, a dispute is defined as having Documents, Statements, Demands and Offers, as well as utilities that define the importance of demands and offers such that the system can value trade-offs and recommend solutions to the involved parties. In addition to the elements defining a dispute, the following requirements must as well be satisfied by the system.
+It is important to note here that identifying the BATNA is a hard problem on it's own and is not addressed in this work. For the purpose of this work, a dispute is defined as having Documents, Statements, Demands and Offers, as well as utilities that define the importance of demands and offers such that the system can value trade-offs and recommend solutions to the involved parties. In addition to the elements defining a dispute, the following requirements are desirable properties of the system that ideally all should be met.
 \begin{itemize}
 
-    \item{\textbf{Proof of existence:}} Either party needs to be able to proof that the other party has either specified demands that were met by the other party, or proposed an offer tha meets the demand, such that in case of either party attempting further formal litigation, there exists a proof of resolution of the dispute.
+    \item{\textbf{Proof of existence:}} Either party needs to be able to proof that the other party has either specified demands that were met by the other party, or proposed an offer that meets the demand, such that in case of either party attempting further formal litigation, there exists a proof of resolution of the dispute.
 
     \item{\textbf{Secrecy of utility:}} It may not be in the interest of either party for their opposing side to know their utility function. The system must hence provide a way for the utility function to be either fully or partially private while still providing both parties a way to resolve the dispute.
 
@@ -403,20 +589,18 @@ For the purpose of this work, a dispute is defined as having Documents, Statemen
 
 \end{itemize}
 
-\subsection{Formal definition of the dispute framework}
-A dispute can be seen as a negotiation between two parties about issues and can be formally defined in the sense of a Bargaining Game \cite{Nash:bargaining} [TODO: rubenstein] and, in the ideal case, finding a solution that represents a Nash Equilibrium or is Pareto optimal. The formal definition uses a propositional logic extended with concrete domains $\Proplang$ as defined by \cite{Ragone2008} as well as borrows from  \cite{DBLP:journals:corr:ZhangZ14a}, \cite{Bellucci:2004:IAI:1032651.1033678} and [TODO: cite multi lateral hemaissa].
-In this work, parties in a dispute can argue issues traceably using a mechanism similar to statements described in \cite{Bellucci:2004:IAI:1032651.1033678} and use $\Proplang$ to formalise their demands or offers. Demands differ from offers only in their utility definition and what party raised them, demand is defined as raised by the party initiating the dispute and offer by the defending party.
-
-Demands and offers are made up of two types of issues, propositional atoms $\propatom \in \{true, false\}$ and variables $\propvar \in \Propdom_{\propvar}$ where $\Propdom_{\propvar}$ is the numerical domain associated with the variable. Variables are constrained by their domain and a comparison with a constant. These definitions allow to formalise demands and offers like \texttt{resideWithWife$\wedge$(childSupport$\geq$2500)} representing the demands that the wife wants the children to reside with her and child support payments of at least £2500 per month. Conditional demands like \texttt{houseToWife$\Rightarrow$(childSupport$\leq$1000)} representing the fact that if the family home is given to the wife, then child support payments would be less. For completeness, precise definitions, as defined by \cite{Ragone2008} \cite{Baader:1991:SIC:1631171.1631239}, for the above formalization is provided.
+\subsection{Formal definition of the dispute framework} \label{sec:formalising_dispute}
+A dispute can be seen as a negotiation between two parties about issues and can be formally defined in the sense of a Bargaining Game \cite{Nash:bargaining} \cite{Rubenstein} that enables the system to find a solution that represents a Nash Equilibrium or is Pareto optimal. The formal definition uses a propositional logic extended with concrete domains $\Proplang$ as defined by \cite{Ragone2008} as well as borrows from \cite{Lodder:ORD_system_design}, \cite{DBLP:journals:corr:ZhangZ14a}, \cite{Bellucci:2004:IAI:1032651.1033678} and \cite{Hemaissia:2007:MMN:1329125.1329314}.
+In this work, parties in a dispute can argue issues traceably using a mechanism similar to statements described in \cite{Bellucci:2004:IAI:1032651.1033678} and use $\Proplang$ to formalise their demands or offers. Demands and offers are made up of two types of issues, propositional atoms $\propatom \in \{true, false\}$ and variables $\propvar \in \Propdom_{\propvar}$ where $\Propdom_{\propvar}$ is the numerical domain associated with the variable. Variables are constrained by their domain and a comparison with a constant. These definitions allow to formalise demands and offers like \texttt{resideWithWife$\wedge$(childSupport$\geq$2500)} representing the demands that the wife wants the children to reside with her and child support payments of at least £2500 per month. Conditional demands like \texttt{houseToWife$\Rightarrow$(childSupport$\leq$1000)} representing the fact that if the family home is given to the wife, then child support payments would be less. For completeness, definitions from \cite{Ragone2008} and \cite{Baader:1991:SIC:1631171.1631239} for the above formalization are provided.
 
 \begin{itemize}
     \item
         \textbf{Concrete Domains:}\cite{Baader:1991:SIC:1631171.1631239} A concrete domain $\Propdom$ consists of a finite set $\Delta_{\Predicate}(\Propdom)$ of numerical values, and a set of predicates $\Predicate(\Propdom)$ expressing numerical constraints on $\Propdom$.
-   
+
         Predicats are always binary operators $\Predicate(\Propdom) := \{\geq, \leq, >, <, =, \neq\}$ with their second argument being a constant in the domain $\Delta_{\Predicate}(\Propdom)$, the domain can represent amounts of money, weekdays, colours etc depending on the requirements\cite{Ragone2008}.
-        
+
     \item
-        \textbf{The Language $\Proplang$:}\cite{Ragone2008} Let $\Propatom$ be a set of propositional atoms, and $\Propvar$ a set of pairs $\langle\propvar, \Propdom_{\propvar}$ each made of a feature name and an associated concrete domain $\Propdom_{\propvar}$, and let $k$ be a value in $\Propdom_{\propvar}$. Then the following formulas are in $\Proplang$:
+        \textbf{The Language $\Proplang$:}\cite{Ragone2008} Let $\Propatom$ be a set of propositional atoms, and $\Propvar$ a set of pairs $\langle\propvar, \Propdom_{\propvar}\rangle$ each made of a feature name and an associated concrete domain $\Propdom_{\propvar}$, and let $k$ be a value in $\Propdom_{\propvar}$. Then the following formulas are in $\Proplang$:
         \begin{enumerate}
             \item every atom $\propatom \in \Propatom$ is a formula in $\Proplang$
             \item if $\langle \propatom, \Propdom_{\propvar} \rangle \in \Propvar, k \in \Propdom_{\propvar}$, and $c \in \{\geq, \leq, >, <, =, \neq\}$ then $(\propvar ck)$ is a formula in $\Proplang$
@@ -425,12 +609,12 @@ Demands and offers are made up of two types of issues, propositional atoms $\pro
 
     \item
         \textbf{Interpretation and Models:}\cite{Ragone2008} An interpretation $\Interpretation$ for $\Proplang$ (denoted as a superscript .$^{\Interpretation}$ on it's arguments) is a function that maps each atom in A into a truth value $\propatom^{\Interpretation} \in \{true, false\}$, each feature name $\propvar$ into a value $\propvar^{\Interpretation} \in \Propdom_{\propvar}$, and assigns truth values to formulas as follows:
-       
+
         \begin{itemize}
             \item $(\propvar ck)^{\Interpretation} = true$ iff $\propvar^{\Interpretation}$ is true in $\Propdom_{\propvar}$ and false otherwise
             \item $(\neg\psi)^{\Interpretation} = true$ iff $\psi^{\Interpretation} = false$, $(\psi\wedge\varphi)^{\Interpretation} = true$ iff both $\psi^{\Interpretation} = true$ and $\varphi^{\Interpretation} = true$, according to truth tables for propositional connectives.
         \end{itemize}
-        
+
         The notation $\Interpretation\models\varphi$ denotes the fact that $\Interpretation$ is a model for $\varphi$ meaning that it assigns $true$ to $\varphi$. $\Interpretation$ is said to be a model for a set of formulas if it assigns true to every formula in the set.
 \end{itemize}
 
@@ -441,29 +625,29 @@ In addition to the formalisation for issues, parties must be able to provide sta
     \label{eq:initial_statement}
 \end{equation}
 \begin{equation}
-    \statement_a(\party, \statementtext, \statement_b) \mid a \neq b 
+    \statement_a(\party, \statementtext, \statement_b) \mid a \neq b
 \end{equation}
 
 Using the above definitions, it is possible to provide statements following issues, called supporting or responding ones as well as supporting, responding and concluding statements following up on previous statements. The five types of statements are defined as:
 
 \begin{enumerate}
-    
+
     \item \textbf{Supporting/Responding statement on issue}: A statement, referencing an issue is called a supporting statement, if it is raised by the party benefiting from the demand and a responding one if it is raised by the party hurt by the issue. Formally this could be defined by attaching a label to each atom $\propatom$ and variable $\propvar$ in the language $\Proplang$, but it is not technically necessary to make this distinguishment for the purpose of this work.
         \begin{equation*}
             \statement(\party, \statementtext, \alpha) \mid \alpha \in \Propvar \cup \Propatom \wedge \alpha \neq \varnothing
             \tag{\ref{eq:initial_statement} revisited}
         \end{equation*}
 
-    \item \textbf{Supporting statement on statement:} Supporting statements to prior ones are defined as responses to an earlier statement made by the same party: 
+    \item \textbf{Supporting statement on statement:} Supporting statements to prior ones are defined as responses to an earlier statement made by the same party:
         \begin{equation}
             \statement_a(\party_i, \statementtext, \statement_b(\party_j, \statementtext)) \mid i = j \wedge a \neq b
         \end{equation}
-   
+
     \item \textbf{Responding statement on statement:} Responding statements to prior ones are defined as responses to an earlier statement made by an opposing party:
         \begin{equation}
             \statement_a(\party_i, \statementtext, \statement_b(\party_j, \statementtext)) \mid i \neq j \wedge a \neq b
         \end{equation}
-    
+
     \item \textbf{Concluding statement on statement:} As a sequence of statements can be interpreted as a discussion on a certain topic, it is readily obvious that there needs to be a mechanism to conclude the discussion. These concluding statements are defined as:
         \begin{equation}
             \statement_a(\party_i, \varnothing, \statement_b(\party_j, \statementtext)) \mid a \neq b
@@ -473,8 +657,8 @@ Using the above definitions, it is possible to provide statements following issu
 Building on above definitions, a set $\Statement'$ of unconcluded statements is defined as $\Statement' := \{\statement_a \in \Statement \mid \not\exists \statement_b \colon \statement_b(\_,\_,\statement_s)\}$ which is used to define an agreement.
 
 
-\subsection{Formal definition of Resolution/Agreement}
-A resolution or agreement to a dispute is defined as an interpretation $\Interpretation$ that assigns $true$ to the formulas $\demand$ and $\offer$ representing the demand and offer in combination with an ontology $\Ontology$ represented as a set of formulas in $\Proplang$ describing the domain of the dispute\footnote{An example formula in the ontology could be \texttt{resideWithWife$\Leftrightarrow\neg$resideWithHusband} or \texttt{DiscloseWifeCheatedProof1$\Rightarrow$wifeCheated}}, formally\cite{Ragone2008}:
+\subsection{Formal definition of Resolution/Agreement} \label{sec:agreement}
+A resolution or agreement to a dispute is defined as an interpretation $\Interpretation$ that assigns $true$ to the formulas $\demand$ and $\offer$ representing the demand and offer in combination with an ontology $\Ontology$ represented as a set of formulas in $\Proplang$ describing the domain of the dispute\footnote{An example formula in the ontology could be \texttt{resideWithWife$\Leftrightarrow\neg$resideWithHusband} or \texttt{DiscloseWifeUnfaithfulProof1$\Rightarrow$wifeCheated}}, formally\cite{Ragone2008}:
 \begin{itemize}
     \item \textbf{Demand:} A demand is a formula $\demand$ in $\Proplang$ such that $\Ontology \cup \{\demand\}$ is satisfiable.
     \item \textbf{Offer:} An offer is a formula $\offer$ in $\Proplang$ such that $\Ontology \cup \{\demand\}$ is satisfiable.
@@ -483,7 +667,40 @@ A resolution or agreement to a dispute is defined as an interpretation $\Interpr
 
 
 \section{Dispute Protocol and Domain Specific Language}
-In this section, a domain specific language, DSL, as well as a protocol for interaction of parties is described to allow them to traceably and verifiably negotiate issues using blockchain technologies instead of a neutral third party and come to a mutually accepted resolution. Obviously a third party like a mediator has more roles than to act as a notary, which in this system the blockchain does, but it is firmly believed by the author that providing facilities that allow sidestepping a third party and if needed later on in the process consult one or alternatively using game theoretic approaches as described in section \ref{sec:game_theoretic_view}, while not applicable for all types of disputes, does suffice for a wide range.
+Wooldridge and Parsons \cite{Wooldridge:2000:LN:3006433.3006516} provide a definition of a negotiation meta-language which is an equivalent idea and the basis to the domain specific language, DSL, defined in this chapter and denoted as $\Metalang$. The protocol is designed as a repeatable one-shot negotiation with a reference to previous rounds of the game. It is worth noting that the protocol designed simply allows the two parties to negotiate using a blockchain, but does not provide any success guarantees or support that a third party like a Mediatior would otherwise provide. In section \ref{sec:negotiation_support} negotiation support without a third party is investigated.
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{./figures/adr_dispute.png}
+    \caption{High-level dispute protocol}
+    \label{fig:adr_dispute}
+\end{figure}
+
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{|l X|}
+        \hline
+        \textbf{Operation} & \textbf{Description} \\
+        \hline
+        $ref(h)$ & Indicate that this document is a continuation of the document identified by hash $h$ \\
+        $disclose(\party, \adrreceipt)$ & Party $\party$ states they have disclosed a document identified by a receipt $\adrreceipt$ \\
+        $ontology(\party, \Ontology)$ & Ontology $\Ontology$ provided by party $\party$. If both parties provide ontologies they are combined \\
+        $constraint(\party, \varphi)$ & Constraint provided by party $\party$, It is allowed to specify multiple constraints. Depending on the party, the constraints are either demands or offers as defined in section \ref{sec:formalising_dispute} \\
+        $state(\party, \statement)$ & Plain text statements (equation \ref{eq:initial_statement}) made by party $\party$ \\
+        $accept(\party, \Interpretation)$ & Indicate that party $\party$ accepts interpretation $\Interpretation$ \\
+        $withdraw(\party)$ & Indicate that party $\party$ withdraws from the negotiation \\
+        \hline
+    \end{tabularx}
+    \label{tab:dsl_operations}
+    \caption{Valid operations of the DSL $\Metalang$}
+\end{table}
+
+The DSL has to allow parties to specify they have disclosed documents, formalise the demands or offers, argue for or against those as well as accepting or rejecting a resolution. Valid operations $\metaop \in \Metalang$ are defined in Table \ref{tab:dsl_operations}. In the dispute protocol, illustrated in figure \ref{fig:adr_dispute} a party initiates a dispute by creating a document describing the dispute using $\Metalang$. When a party has finished formalising their demands, the document is cryptographically signed, anchored into the blockchain and made available to the other party. They then pick up the document and are faced with three options. They can either accept the demands as they are by providing an interpretation $\Interpretation$ that satisfies the constraints defined by the other party which concludes the dispute as long as an agreement as defined in section \ref{sec:agreement} is reached, they can choose to expand the document with their own operations and use a game theoretic approach to get a valid interpretation they can then accept, or they expand the document with statements and constraints such that no agreement can't be reached. In this case, the initiating party takes the document, adds a reference to the document specifying the system of constraints and statements that cannot be resolved and the process starts again with a modified set of constraints.
+
+In order to guarantee consistency, the implementation guarantees that statements, and disclosed documents cannot be removed from the systems state, the ontology is always consistent and that a party is only allowed to modify their own constraints and ontology items. Another safety element is that once a party has finished modifying the system, the document is cryptographically signed before being sent to the other party such that it is possible to verify the authenticity of the demands.
+
+
+
+
 
 %A simple example conversation between a Husband and a Wife in a marital dispute could then look something like:
 %$\\s_0(W, “\textnormal{I want child support payments}”) \\
@@ -494,10 +711,29 @@ In this section, a domain specific language, DSL, as well as a protocol for inte
 
 
 
-\section{Game theoretic view of dispute resolution} \label{sec:game_theoretic_view}
+\section{Negotiation support and Game theoretic view} \label{sec:negotiation_support}
+Many ODR systems provide negotiation support to identify the importance of certain issues to the parties, typically defined via utility functions as well as a mechanism to suggest a resolution to the dispute. While in \cite{Bellucci:2004:IAI:1032651.1033678} the system attempts to distribute resources based on trade-off maps, other approaches like \cite{Ragone:2006:PAO:1124566.1124569} use propositional logic as outlined in section \ref{sec:formalising_dispute}. In general all these approaches are based on the Bargaining game defined by Nash \cite{Nash:bargaining} and expanded on by Rubenstein \cite{Rubenstein} and attempt to find a Nash Equilibrium or a Pareto optimal outcome for both parties based on their constraints and utilities. All systems that provide negotiation support in a bargaining context, use third a neutral party, typically a software system, that has a complete view of the world, all the constraints of both parties as well as the utility functions they define such that they can calculate a solution to the problem without parties finding out about the constraints and utilities of the other ones. In the context of this work, the goal is to eliminate the need for a third party and in this section an approach is developed, that attempts to solve this issue. To this extend the following requirements are addressed:
+\begin{itemize}
+    \item\textbf{Offline:} A party should be able to specify their utilities, constraints etc, anchor the document and then not be online for the other party to progress the dispute. In order to support this, all the information required has to be available to the other party. The protocol in combination with the formalism from section \ref{sec:formalising_dispute} itself allows for that to happen. Using the approach of \cite{Ragone2008} of converting the system defined over the propositional language $\Proplang$ into an integer linear program, using utility functions over propositional atoms as well as variables over a concrete domain, an interpretation $\Interpretation$ satisfying the system can be found.
+
+    \item\textbf{Secrecy of utility:} The utilities should not be visible to the other party. This is not easily achievable given this system as the linear program requires the utility function to be available for the optimization to run. Ragone et al \cite{Ragone2008} define a MAX-SUM-MBN that yields a Pareto optimal solution as a maximization problem over the sum of utilities of both parties, which for obvious reasons requires the utility functions to be known.
+
+    \item\textbf{Secrecy of constraints:} The constraints should not be visible to the other party, which can be achieved using multi-party computation. Using the transformation based approach defined by \cite{Mangasarian2012} and expanded upon by \cite{Li2013} we can apply a linear transformation to the constraints of the linear problem and hence obfuscate the constraints defined using a privately held matrix $B$ and $D$ that is only known to the party that defined the constraints. This way it is possible to combine the two sets of constraints and find a valid $\Interpretation$ in the transformed space. While ILP problems are NP-Hard\footnote{In the general case, ignoring special cases} and hence calculating a solution to a large problem is expensive, a party in possession of the transformed constraint set can probe the system by attempting to solve it with different constraints, effectively figuring out the constraints of the counterparty using brute-force. More about this problem later.
+
+    \item\textbf{Provability:} It must be provable to either party that the constraints defined are indeed valid and that the solution meets the constraints, which is trivially true. If the transformed linear program is signed and shared, then any solution to this problem is guaranteed to be a solution to the constraints specified by the other party.
+\end{itemize}
+This design leaves three problems partially unsolved, secrecy of utility functions, secrecy of constraints and verifiability by a third party. To this extent secrecy of utility functions is ignored in this work and all issues are considered equally important with a pre-defined linear utility on variables in the language $\Proplang$. This way valid solutions to the constraints can be found while the true utility is secret. Introducing an extra step into the protocol, which is manually accepting an interpretation $\Interpretation$ by both parties, solutions can be rejected if their utility is not high enough. The next problem is secrecy of constraints. While it is impossible for a part to learn their counterparties constraints directly, they can probe them using brute force. For large systems this is probably intractable as ILP solving is in general NP-Hard, yet it is a problem that shouldn't be ignored. The last problem is that because everything that's anchored in the blockchain is a hash of the document, only parties that have received a copy of the original document can participate and/or verify the dispute. While this is not a direct issue, it could be a desirable property to have a central monitor that is able to verify that a dispute has been resolved. These problems are left open for future research and are briefly addressed in section \ref{sec:future_work}.
+
+
 \section{System design}
 
-\chapter{Experiment - Emulating a real dispute on the prototype}
+\chapter{Conclusion and Future Work}
+
+\section{Conclusion} \label{sec:conclusion}
+
+\section{Future Work} \label{sec:future_work}
+
+
 
 \bibliographystyle{unsrt}
 \bibliography{bibliography}

@@ -17,13 +17,13 @@ def setup(app, session):
             tierion.create_account(session, account_data['name'], account_data['email'], account_data['full_name'], account_data['secret'])
             return "Account created"
         elif request.method == 'GET':
-            # TODO: Add in Authentication
+            # TODO: Add in Authentication - username and password
             acct = tierion.get_account(session, account_name)
             if acct is None:
                 abort(404, "Error: Couldn't find account " + account_name)
             return acct.json_describe()
         elif request.method == "DELETE":
-            # TODO: Add in Authentication
+            # TODO: Add in Authentication - username and password
             acct = tierion.delete_account(session, account_name)
             if acct is None:
                 abort(404, "Error: Couldn't find account " + account_name)
