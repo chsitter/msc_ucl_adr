@@ -78,17 +78,17 @@
 
 \setstretch{1.0}
 \begin{abstract}
-    This thesis investigates the applicability of blockchain technologies to Alternative Dispute Resolution. More precisely, designing an Online Dispute Resolution system that is blockchain agnostic as well as does not require a neutral third party as an intermediary. It starts by investigating scalability as well as safety guarantees and potential risks involved with blockchains, then defines a protocol for disclosure using blockchain, describes the design and implementation of a blockchain agnostic anchoring tool developed in the course of this work, briefly outlines associating identities with public keys and develops a protocol for two parties to argue a dispute in a provable and verifiable way using a blockchain agnostic protocol and formalism.
+    This thesis investigates the applicability of blockchain technologies to Alternative Dispute Resolution, ADR. More precisely, designing an Online Dispute Resolution, ODR, system that is blockchain agnostic as well as does not require a neutral third party as an intermediary. Online Dispute Resolution merely refers to any online service that allows parties to engage in a dispute resolution process. The thesis starts by investigating scalability as well as safety guarantees and potential risks involved with blockchains, then defines a protocol for disclosure using blockchain, describes the design and implementation of a blockchain agnostic anchoring tool developed in the course of this work, briefly outlines associating identities with public keys and provides a protocol design for two parties to argue a dispute in a provable and verifiable way using a blockchain agnostic protocol and formalism.
 
     \textbf{Safety and performance properties} of blockchain technologies are important to understand. The technology itself has certain limitations with respect to performance and scalability as well as safety and part one if this work outlines the safety guarantees provided as well as the scalability considerations and problems with current incarnations of blockchain technologies. The design of the ADR system developed in this work is influenced by these properties as tamper resistance requirements as well as timely confirmations are a requirement in litigation.
 
-    \textbf{Discovery} is the pre-dispute phase of litigation and describes the process in which documents are disclosed to the other party.\footnote{For the purpose of this work this choice of terminology is used throughout, under the context of civil litigaton in England and Wales, the term Disclosure is used instead of Discovery.} In the second part of this paper, a blockchain agnostic protocol for disclosue is designed as well as an open-source version of the Tierion software offering is developed for use as a blockchain agnostic anchoring utility.
+    \textbf{Discovery/Disclosure} is the pre-dispute phase of litigation and describes the process in which documents are disclosed to the other party.\footnote{For the purpose of this work this choice of terminology is used throughout, under the context of civil litigaton in England and Wales, the term Disclosure is used instead of Discovery.} In the second part of this thesis, a blockchain agnostic protocol for disclosure is designed and a prototype for it implemented. The prototype includes an implementation of a blockchain agnostic service that allows anchoring of arbitrary data into a blockchain and is based on the service provided by the company Tierion as well as a basic webpage showing how disclosure would work.
 
     \textbf{Key Management} is a broad topic on it's own and includes Key generation, key storage and associating identity with keys amongs others. Because parties in the context of blockchains are represented by public keys, it is important to be able to proof the identity of an entity behind a public key. While this work does not focus on this part of the system, it briefly outlines options for associating identity with public keys.
 
     \textbf{Dispute} can be seen as negotiation between parties over certain issues or resources that they wish to divide up evenly. In this work a system is designed, that allows parties to argue over issues using blockchain technologies while not requiring a third party to verify certain statements have been made and agreement has been reached. This works by keeping all interactions in the immutable ledger a blockchain is for future reference. If no mutually satisfying solution can be found, the interactions and documents used in this process can easily be used as evidence in a formal litigation setting. In addition to providing a framework to facilitate disputes, it investigates negotiation support without the need for a third party based on game theoretic approaches as defined by Nash and expanded on by Rubenstein.
 
-    The proposed framework defines all components required to provide an end-to-end system for alternative dispute resolution, designed as individual, stand alone, parts that together form a full system and concludes with a discussion about the problems of the system design as well as future work to address these issues.
+    While ODR is a well studied field with various different approaches to how negotiation is supported, this work presents a novel blockchain based framework for logic based negotiation that does not involve a neutral third party. To the best of our knowledge, this has not been researched before and combines research from negotiation theory, propositional logic, linear programming as well as advanced crypography. The proposed framework defines all components required to provide an end-to-end system for alternative dispute resolution, designed as individual, stand alone, parts that together form a full system and concludes with a discussion about the problems of the system design as well as future work to address these issues.
 
 \end{abstract}
 
@@ -105,43 +105,55 @@ Acknowledge all the things!
 \setstretch{1.5}
 \chapter{Introduction}
 \label{sec:introduction}
+In this chapter, an overview of the thesis is presented. It starts by presenting the research motivation for the project, followed by the defined objectives and the research outcomes. It explains the structure of this dissertation and concludes with the scientific contributions of this work.
 
 \section{Research Motivations}
+Litigation is a lengthy and costly process and in a lot of cases it is more efficient to settle disputes in an alternative dispute resolution, ADR, setting. ADR refers to the process of settling disputes outside of a court of law through mechanisms like Arbitration or Mediation. With almost every person on the planet having access to the Internet and a PC it was only natural that these dispute techniques were moved to the internet, typically referred to as online dispute resolution or ODR. According to \cite{katsh:odr}, ODR borrows the frameworks from offline approaches like Mediation or Arbitration and applies technical resources to it to provide an overall better service. A lot of companies have taken ADR approaches online to provide an ORD framework, and prominent ones inclue eBay, CyberSettle and SmartSettle. Cortez \cite{cortes2011online} states that the advanteages of ODR over traditional approaches are time savings, convenience of the procedure, cost savings, control over outcomes as well as appropriateness, while having the disadvantages of lack of face-to-face contact, technological problems, language barriers, legal difficulties, need for party consent as well as loss of public access, which due to the private nature of Mediation and Arbitration is not an issue.
+
+Disputes can typically be broken into two main areas, discovery and negotiation over issues or resources always involving a third party. In discovery, it is important that a document is made available to the other party, with a guarantee that the documen cannot be tampered with as well as the option to proof that the document was disclosed. In the negotiation phase it is important, that the interactions between parties are traceable and verifiable as well as it needs to be possible to proof that at a certain point in time an agreement was reached. In traditional offline, as well as online settings, there is typically a neutral third party involved that can provide these guarantees. This itself however comes with certain concerns on it's own. What if the third party does not have the domain knowledge to make informed suggestions, what if they are not as impartial as they should be amongs others. This is what the blockchain can potentially address by removing the need for a neutral third party and instead using a combination of blockchains and negotiation tools to provide the same guarantees.
+
+Ever since the invention of Bitcoin, the field of crypto currencies has become more and more popular. In this particular context the more interesting aspect of the technology, is the underlying protocol for distributed consensus and globally unique timestamping, called the blockchain. Due to the tamper resistance and cryptographic guarantees they provide, some of the tasks that would have typically be performed by a Notary or neutral third party, can now be done online, between two parties directly.
+
 
 \section{Research Objectives}
+The objective of this research is to investigate the applicability of blockchain technologies to the domain of ODR with a focus on developing a prototype blockchain anchoring system to act as a notary type service for disclosure as well as the design of a meta-language, DSL, as well as a protocol that can be used on top of this prototype to facilitate structured negotiation between parties to be used for dispute resolution in a blockchan agnostic manner. The main hypothesis of this research states:
+\\\textit{Using blockchain technologies it is possible to eliminate the need for a neutral third party in alternative dispute resolution processes.}
+To validate this hypothesis, there are three main tasks that need to be solved in this research, Discovery, Negotiation and Negotiation Support.
+
+\textbf{Discovery}, the first task that needs to be solved, is defined as \textit{"A party discloses a document by stating that the document exists or has existed."} in the Part 31 of Civil Procedure Rules of England and Wales \cite{justice_gov:civil_procedure_rules}. The objective is to develop a protocol that allows two parties to disclose documents to each other using blockchain anchoring. A blockchain agnostic library for anchoring data needs to be developed and a protocol defined that works on top of this prototype and provides both parties with a way to proof that a document was disclosed by another party. It is important to note that this work does not include any guarantees that all relevant documents are disclosed, as well as even though it should be possible to proof that a certain document was disclosed, it may not be legal to do so as Mediation and Arbitration are private processes and neither party has the right to disclose any of contents of the Mediation/Arbitration unless agreed upon otherwise.
+
+\textbf{Negotiation}, the second task is a well studied domain with a wide range of approaches and applcations. The objective here is to design a formalism, as well as a protocol, that in combination with the anchoring library provides a way for two parties to negotiate a dispute and reach a conclusion, agreement or disagreement, that either party can later on verify and proof. In addition to this, it should be possible to take the negotiation history to a court of law in case of a disagreement to speed up litigation processes. This however needs to be agreed upon by both parties as the Mediation/Arbitration process is private.
+
+\textbf{Negotiation Support}, the last task that needs to be investigated is supporting negotiation between parties. In a real setting, the role of a Mediator/Arbitrator is not only helping to reach consensus, but also to guide the parties through the process and give legal support. This task does not aim to provide all the support a person could provide, but focuses on finding a pareto optimal agreement between parties using the formalism of the previous objective using game theory, blockchains and multi-party computation.
+
+\section{Research/Project impediments}
+This work was originally intended to be performed by a group of at least two people with support from an industry supervisor. Due to unfortunate circumstances, the team fell apart before the project even kicked off properly and the industry supervisor was not available to provide guidance apart from setting out the original direction. This left me having to work on the project alone which, due to the it's huge scope and cross-domain nature made it extremely challenging.
+
 \section{Research Outcomes}
+TODO: write this up
+
 \section{Dissertation Structure}
+The structure of this dissertation is as follows:
+
+\begin{itemize}
+    \item Chapter \ref{chapter:background_and_literature} reviews relevant technologies and concepts for the domain of blockchain based dispute resolution, including basic public key cryptographic concepts, Bitcoin, Ethereum, the Chainpoint blockchain anchoring standard, alternative dispute resolution as well as boolean satisfiability and covers existing blockchain anchoring services, ODR systems as well as multi-party computation for use in the context of negotiation support.
+
+    \item Chapter \ref{chapter:safety_guarantees_attacks_blockchain} summarizes guarantees, blockchains in their current incarnations provide as well as gives a brief overview of problems that affect them with partial resolutions.
+
+    \item Chapter \ref{chapter:anchoring_data_into_the_blockchain} formalises what disclosure is and derives a formal protocol and process that can be used for discovery using blockchains in a blockchain agnostic setting. It also outlines the Chainpoint standard and describes the implementation of a Tierion-based blockchain agnostic anchoring library.
+
+    \item Chapter \ref{chapter:key_management} is included for completeness and provides a summary of Key Management approaches with a focus on associating identity with public keys.
+
+    \item Chapter \ref{chapter:dispute} formally defines a dispute and the concept of a resolution. Based on this formalism then defines a domain specific language and protocol that allows parties to negotiate a dispute using the blockchain anchoring libary of chapter \ref{chapter:anchoring_data_into_the_blockchain} and provides a game theory based mechanism using multi-party computation to support the negotiation.
+\end{itemize}
+
+%TODO: good blog with overview for into? https://ftalphaville.ft.com/2016/04/29/2160502/decentralised-courts-and-blockchains/
+
 \section{Contributions to Science}
 
-    %TODO: good blog with overview for into? https://ftalphaville.ft.com/2016/04/29/2160502/decentralised-courts-and-blockchains/
-
-    %The system addresses the three areas of legal disputes, and provides a solution that combines the components into a fully functional system. The individual problems are:
-    %\begin{itemize}
-        %\item Problem 1 - Discovery: Making documents relevant to the claim available to the other party.
-        %\item Problem 2 - Dispute: Defining the damages incurred and proposing accepted resolutions.
-        %\item Problem 3 - Resolution: Matching proposed resolutions and finding an optimal outcome for both parties (Nash Equilibrium).
-    %\end{itemize}
-    %In addition to the individual components, a detailed description about the overall architecture of the system as well as a case study using a real case are discussed in this work.
-
-
-
-
-%The Blockchain, initially developed as the underlying technology for creating a truly decentralised currency, has found adoption in a variety of fields. Despite it's popularity, the technology is still in very early stages and this thesis investigates some of the scalability as well as security risks involved with using blockchains.
-    %\paragraph*{Problem 1 - Discovery} The first step in every dispute is discovery. Discovery is a pre-trial procedure in which both involved parties can obtain evidence from the other party. Traditionally this is done via lawyers and in a court of law. In our system both parties provide the evidence themselves and anchor it into the Blockchain as a proof that at some point in time they were in possession of the documents. Different cases have different requirements and the system supports anchoring of documents in plain text as well as encrypted versions which the other party will only be able to read if they are given permission or supply documents themselves. The logic behind how documents are shared, encrypted or plain text, is defined in smart contracts.
-
-    %\paragraph*{Problem 2 - Dispute} After discovery has been completed, both parties either start an alternative dispute resolution like mediation or go to trial. This system eliminates the need of a third party in this process by directly linking the two opposing parties via a communications channel on the Blockchain. This provides a traceable and immutable ledger over the interactions between the parties. If neither party agrees to a solution this can be taken as evidence for a future court case.
-
-    %\paragraph*{Problem 3 - Resolution} The last and probably best studied problem is the actual resolution of the dispute. There are multiple ways to resolve a dispute, binding suggestions by the systems, binding agreement between both parties amongst many others. This work looks to mathematically formulate this problem as well as propose a general framework that supports different strategies based on industry best practices.
-
-    %\paragraph*{System Design and Case study} The system design outlines the concept, the interplay between components as well as the systems architecture. It looks into the required infrastructure, access to third party services like smart contract platforms and analyses the security guarantees as well as the load the system can cope with. Finally this design is used to run a case study of a real dispute and it is shown that real-world problems can be resolved without a third party using this system.
-
-
-
-%\section{Dispute}
-%backup: Either way there is typically a third, neutral, party involved that decides on the final outcome. This poses a problem as this third party can be seen as biased towards one party and hence not neutral or as not knowledgeable enough in the domain to make an informed and fair decision.
 
 \chapter{Background and Literature Review}
-\label{sec:bg_lit_review}
+\label{chapter:background_and_literature}
 This chapter details technologies used during development of this project as well as cryptographic and theoretical work relevant to this dissertation in section \ref{sec:background} and investigates similar research in section \ref{sec:literature_review}.
 
 \section{Background} \label{sec:background}
@@ -186,7 +198,16 @@ Bitcoin, described in section \ref{sec:background_bitcoin} as well as Ethereum, 
 Because of these properties, cryptographic hash functions are widely used in blockchains and crypto currencies.
 
 \subsection{Elliptic Curve Cryptography overview} \label{sec:background_elliptic_curve}
-Write up the maths and find some good illustrations
+The main advantage of elliptic curve cryptography is that in order to achieve the same level of crypographic security as in alternative systems like RSA or DSA, shorter keys can be used due to the fact that there doesn't exist a known sub-exponential algorithm to solve the discrete logarithm problem. This leads to more efficient public key algorithms. \cite{EllipticCurveOverview} \cite{Araki1998}
+
+Formally, an elliptic curve is defined over a finite field, as all the points represented by
+\begin{equation}
+    y^2 = x^3 + ax + b
+\end{equation}
+
+
+
+
 
 
 
@@ -315,6 +336,7 @@ which is "secure" as it does not expose any of the private data $A$. In the cont
 
 
 \chapter{Safety guarantees of and attacks on the blockchain}
+\label{chapter:safety_guarantees_attacks_blockchain}
 At the time of writing Bitcoin and Ethereum are the two most popular cryto currencies, while both differ significantly in the way the blockchain is built and maintained, they both suffer from the same basic problems briefly outlined in this chapter
 
 \section{Ellyptic curve cryptography}
@@ -551,7 +573,7 @@ Certificate Authorities are a well established model used in the SSL standard. I
 Initially proposed by Shamir \cite{shamir1984identity}, Identity-Based Encryption uses arbitraty public keys, allowing for the public key to be e.g. an email address, a phone number or another string identifying the entity behind the key. Using a central, trusted authority, private keys can then be derived from that arbitry string public key. The problem in this setup is that it depends on a central authority holding a private key that must not be kept secret. These schemes have the advantage that they don't require a certificate, as the public key itself already acts as such. Boneh and Franklin \cite{boneh2001identity} and Sakai and Kasahara \cite{sakai2003id} propose IBE schemes for elliptic curves which could hence be used with blockchains.
 
 \section{Cryptographically signed biometrics or video tape}
-A different approach to the identity problem would be to require each participating party to record a video tape of themselves stating who they are and whom they represent, which they then cryptographically sign using their private key and share both, the signature as well as the video tape with the counter party. This way, it is possible to proof that the video tape was signed by the entity holding the private key associated with the public key used to verify the signature. 
+A different approach to the identity problem would be to require each participating party to record a video tape of themselves stating who they are and whom they represent, which they then cryptographically sign using their private key and share both, the signature as well as the video tape with the counter party. This way, it is possible to proof that the video tape was signed by the entity holding the private key associated with the public key used to verify the signature.
 
 \section{Namecoin}
 Namecoin\footnote{\url{https://namecoin.org/}} is a cryptocurrency, more precisely a fork of the bitcoin protocol, that provides a key-value type storage on a blockchain. Using the proof of existence guarantee a blockchain provides, it is possible to register the public key with an identity on the blockchain, essentially providing a globally unique association of the key. While this approach is interesting in it's simplicity, there needs to be some mechanism in place to ensure that the registered information is correct as it cannot be changed.
@@ -661,7 +683,7 @@ Building on above definitions, a set $\Statement'$ of unconcluded statements is 
 A resolution or agreement to a dispute is defined as an interpretation $\Interpretation$ that assigns $true$ to the formulas $\demand$ and $\offer$ representing the demand and offer in combination with an ontology $\Ontology$ represented as a set of formulas in $\Proplang$ describing the domain of the dispute\footnote{An example formula in the ontology could be \texttt{resideWithWife$\Leftrightarrow\neg$resideWithHusband} or \texttt{DiscloseWifeUnfaithfulProof1$\Rightarrow$wifeCheated}}, formally\cite{Ragone2008}:
 \begin{itemize}
     \item \textbf{Demand:} A demand is a formula $\demand$ in $\Proplang$ such that $\Ontology \cup \{\demand\}$ is satisfiable.
-    \item \textbf{Offer:} An offer is a formula $\offer$ in $\Proplang$ such that $\Ontology \cup \{\demand\}$ is satisfiable.
+    \item \textbf{Offer:} An offer is a formula $\offer$ in $\Proplang$ such that $\Ontology \cup \{\offer\}$ is satisfiable.
     \item \textbf{Agreement:} A possible resolution to the dispute is defined as the set of all Interpretations $\Deal$ satisfying the demand as well as the offer in combination with the ontology $\{\Interpretation \mid \Interpretation \models \Ontology \cup \{\offer, \demand\}\}$. An agreement is then defined as a deal $\deal \in \Deal$ that both parties accept iff $\Statement' = \emptyset$
 \end{itemize}
 
