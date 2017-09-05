@@ -15,3 +15,5 @@ __pycache__
 *.lot
 *.pdf
 *.toc
+package-lock.json
+node_modules

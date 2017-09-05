@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from tierion import db, datastore, record, accounts, hashitem, _check_queue_fn, RecordState, _check_confirmations_fn
 from tierion.db import Record
-from tierion.util import build_chainpoint_receipt
+from tierion.chainpoint_util import build_chainpoint_receipt
 
 
 class TestDataStoreAPI(TestCase):
@@ -16,14 +16,16 @@ class TestDataStoreAPI(TestCase):
         db.Base.metadata.create_all(bind=self.engine)
 
         self.session = db.create_session()
+        self.user = accounts.create_account(self.session, "tester", "test@test.com", "tester user", "secret")
+
 
     def test_create_datastore(self):
-        ds1 = datastore.create_datastore(self.session, "Test1", "TestGroup")
+        ds1 = datastore.create_datastore(self.session, self.user.id, "Test1", "TestGroup")
         assert ds1.id is not None
 
     def test_create_multiple_datastores_get_different_id_and_key(self):
-        ds1 = datastore.create_datastore(self.session, "Test1", "TestGroup")
-        ds2 = datastore.create_datastore(self.session, "Test2", "TestGroup")
+        ds1 = datastore.create_datastore(self.session, self.user.id, "Test1", "TestGroup")
+        ds2 = datastore.create_datastore(self.session, self.user.id, "Test2", "TestGroup")
 
         assert ds1.id != ds2.id
         assert ds1.key != ds2.key
@@ -32,9 +34,9 @@ class TestDataStoreAPI(TestCase):
         stores = []
         for i in range(1, 10):
             stores.append(
-                datastore.create_datastore(self.session, "Test{}".format(i), "TestGroup"))
+                datastore.create_datastore(self.session, self.user.id, "Test{}".format(i), "TestGroup"))
 
-        result = datastore.get_datastore(self.session)
+        result = datastore.get_datastore(self.session, self.user.id)
         assert len(result) == len(stores)
         assert len({x.id for x in result}) == len(result)  # no ID duplicated
         assert len({x.key for x in result}) == len(result)  # no key duplicated
@@ -44,21 +46,21 @@ class TestDataStoreAPI(TestCase):
         stores = []
         for i in range(1, 10):
             stores.append(
-                datastore.create_datastore(self.session, "Test{}".format(i), "TestGroup"))
+                datastore.create_datastore(self.session, self.user.id, "Test{}".format(i), "TestGroup"))
 
-        result = datastore.get_datastore(self.session, 1)
+        result = datastore.get_datastore(self.session, self.user.id, 1)
         assert isinstance(result, db.DataStore)
         assert result.id == 1
 
     def test_get_non_existing_datastore(self):
-        result = datastore.get_datastore(self.session, 1)
+        result = datastore.get_datastore(self.session, self.user.id, 1)
         assert result is None
 
     def test_update_datastore(self):
-        ds = datastore.create_datastore(self.session, "Test1", "TestGroup")
+        ds = datastore.create_datastore(self.session, self.user.id, "Test1", "TestGroup")
         assert ds.name == "Test1"
 
-        upd = datastore.update_datastore(self.session, ds.id, "Update", "UpdateGroup")
+        upd = datastore.update_datastore(self.session, self.user.id, ds.id, "Update", "UpdateGroup")
         assert upd.name == "Update"
         assert upd.groupName == "UpdateGroup"
 
@@ -67,16 +69,16 @@ class TestDataStoreAPI(TestCase):
         assert upd is None
 
     def test_delete_datastore(self):
-        ds = datastore.create_datastore(self.session, "Test1", "TestGroup")
+        ds = datastore.create_datastore(self.session, self.user.id, "Test1", "TestGroup")
 
-        deleted = datastore.delete_datastore(self.session, ds.id)
-        assert datastore.get_datastore(self.session, ds.id) is None
+        deleted = datastore.delete_datastore(self.session, self.user.id, ds.id)
+        assert datastore.get_datastore(self.session, self.user.id, ds.id) is None
         assert deleted.id == ds.id
         assert deleted.key == ds.key
         assert deleted.name == ds.name
 
     def test_delete_non_existing_datastore(self):
-        deleted = datastore.delete_datastore(self.session, 1)
+        deleted = datastore.delete_datastore(self.session, self.user.id, 1)
         assert deleted is None
 
 
@@ -109,8 +111,8 @@ class TestRecordAPI(TestCase):
 
         self.session = db.create_session()
         self.user = accounts.create_account(self.session, "tester", "test@test.com", "tester user", "secret")
-        self.ds1 = datastore.create_datastore(self.session, "Store1", "Testing")
-        self.ds2 = datastore.create_datastore(self.session, "Store2", "Testing")
+        self.ds1 = datastore.create_datastore(self.session, self.user.id, "Store1", "Testing")
+        self.ds2 = datastore.create_datastore(self.session, self.user.id, "Store2", "Testing")
 
     def test_create_record(self):
         data = {"a": "1", "b": "2"}
@@ -129,7 +131,7 @@ class TestRecordAPI(TestCase):
         assert r1.hashitem.sha256 != r2.hashitem.sha256
 
     def test_get_non_existant_record(self):
-        assert record.get_record(self.session, id=42) is None
+        assert record.get_record(self.session, self.user.id, id=42) is None
 
     def test_get_specific_record(self):
         data1 = {"a": "1", "b": "2"}
@@ -137,22 +139,22 @@ class TestRecordAPI(TestCase):
         r1 = record.create_record(self.session, self.user.id, self.ds1.id, data1)
         record.create_record(self.session, self.user.id, self.ds1.id, data2)
 
-        res = record.get_record(self.session, id=r1.id)
+        res = record.get_record(self.session, self.user.id, id=r1.id)
         assert isinstance(res, Record)
         assert r1.id == res.id
 
     def test_get_record_invalid_datastore_returns_none(self):
         data = {"a": "1", "b": "2"}
         record.create_record(self.session, self.user.id, self.ds1.id, data)
-        assert len(record.get_record(self.session, datastoreId=42)) == 0
+        assert len(record.get_record(self.session, self.user.id, datastoreId=42)) == 0
 
     def test_get_records_paginate(self):
         data = {"a": "1", "b": "2"}
         for i in range(1, 10):
             record.create_record(self.session, self.user.id, self.ds1.id, data)
 
-        p1 = record.get_record(self.session, page=1, pageSize=5)
-        p2 = record.get_record(self.session, page=2, pageSize=5)
+        p1 = record.get_record(self.session, self.user.id, page=1, pageSize=5)
+        p2 = record.get_record(self.session, self.user.id, page=2, pageSize=5)
 
         assert len(p1) == 5
         assert len(p2) == 4
@@ -172,14 +174,14 @@ class TestRecordAPI(TestCase):
         r1 = record.create_record(self.session, self.user.id, self.ds1.id, data)
         r2 = record.create_record(self.session, self.user.id, self.ds1.id, data)
 
-        r1_del = record.delete_record(self.session, record_id=r1.id)
-        assert record.get_record(self.session, id=r1.id) is None
+        r1_del = record.delete_record(self.session, self.user.id, record_id=r1.id)
+        assert record.get_record(self.session, self.user.id, id=r1.id) is None
         assert r1.id == r1_del.id
         assert r1.hashitem.sha256 == r1_del.hashitem.sha256
-        assert record.get_record(self.session, id=r2.id) is not None
+        assert record.get_record(self.session, self.user.id, id=r2.id) is not None
 
     def test_delete_non_existing_record(self):
-        assert record.delete_record(self.session, record_id=42) is None
+        assert record.delete_record(self.session, self.user.id, record_id=42) is None
 
 
 class TestHashAPI(TestCase):
@@ -225,7 +227,7 @@ class TestAnchorCheckerFunctions(TestCase):
 
         self.session = db.create_session()
         self.user = accounts.create_account(self.session, "tester", "test@test.com", "tester user", "secret")
-        self.datastore = datastore.create_datastore(self.session, "testDS", "testGroup")
+        self.datastore = datastore.create_datastore(self.session, self.user.id, "testDS", "testGroup")
 
     def test_anchor_cb_is_called_when_queue_size_exceeded_for_hashitems(self):
         hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
@@ -321,7 +323,7 @@ class TestAnchorCheckerFunctions(TestCase):
             to_be_anchored = merkle_root_to_be_anchored
             return [("ETHData", "0xfakeId")]
 
-        all_records = record.get_record(self.session)
+        all_records = record.get_record(self.session, self.user.id)
         assert all_records is not None
         assert len(all_records) is 1
         assert all_records[0].hashitem.proof is None
@@ -332,7 +334,7 @@ class TestAnchorCheckerFunctions(TestCase):
         _check_queue_fn(test_cb, 0, 0)
         assert to_be_anchored is not None
 
-        all_records = record.get_record(self.session)
+        all_records = record.get_record(self.session, self.user.id)
         assert all_records is not None
         assert len(all_records) is 1
         assert all_records[0].hashitem.proof is not None
@@ -347,8 +349,8 @@ class TestAnchorCheckerFunctions(TestCase):
         def test_confirmation_cb(endpoint, transaction_id):
             return "0xfakeBlockHash"
 
-        records = record.get_record(self.session)
-        hashitems = hashitem.get_hashitem(self.session)
+        records = record.get_record(self.session, self.user.id)
+        hashitems = hashitem.get_hashitem(self.session, self.user.id)
         assert len(records) == 1
         assert len(hashitems) == 2
         record_confirmation = records[0].hashitem.confirmations
@@ -358,8 +360,8 @@ class TestAnchorCheckerFunctions(TestCase):
 
         _check_confirmations_fn(test_confirmation_cb)
 
-        records = record.get_record(self.session)
-        hashitems = hashitem.get_hashitem(self.session)
+        records = record.get_record(self.session, self.user.id)
+        hashitems = hashitem.get_hashitem(self.session, self.user.id)
         assert len(records) == 1
         assert len(hashitems) == 2
         record_confirmation = records[0].hashitem.confirmations
@@ -381,7 +383,7 @@ class TestAnchorCheckerFunctions(TestCase):
         assert called is None
 
     def test_post_receipt_is_sent_when_enabled(self):
-        datastore_do_post_receipt = datastore.create_datastore(self.session, "testDS", "testGroup", post_receipt_enabled=True, post_receipt_url="https://foobar")
+        datastore_do_post_receipt = datastore.create_datastore(self.session, self.user.id, "testDS", "testGroup", post_receipt_enabled=True, post_receipt_url="https://foobar")
         hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
         record.create_record(self.session, self.user.id, datastore_do_post_receipt.id, "foobar0",)
         called = None
@@ -395,7 +397,7 @@ class TestAnchorCheckerFunctions(TestCase):
         assert called[0] == "https://foobar"
 
     def test_post_receipt_is_sent_for_correct_records(self):
-        datastore_do_post_receipt = datastore.create_datastore(self.session, "testDS", "testGroup", post_receipt_enabled=True, post_receipt_url="https://foobar")
+        datastore_do_post_receipt = datastore.create_datastore(self.session, self.user.id, "testDS", "testGroup", post_receipt_enabled=True, post_receipt_url="https://foobar")
         hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())
         record.create_record(self.session, self.user.id, self.datastore.id, "foobar0",)
         record.create_record(self.session, self.user.id, datastore_do_post_receipt.id, "foobar1",)
@@ -423,7 +425,7 @@ class TestUtils(TestCase):
 
         self.session = db.create_session()
         self.user = accounts.create_account(self.session, "tester", "test@test.com", "tester user", "secret")
-        self.datastore = datastore.create_datastore(self.session, "testDS", "testGroup")
+        self.datastore = datastore.create_datastore(self.session, self.user.id, "testDS", "testGroup")
 
     def test_create_receipt_for_confirmed_item(self):
         hashitem.create_hashitem(self.session, self.user.id, hashlib.sha256(uuid4().bytes).hexdigest())

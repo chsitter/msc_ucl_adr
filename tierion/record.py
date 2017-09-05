@@ -19,9 +19,10 @@ class RecordState(Enum):
     COMPLETE = 'complete'
 
 
-def get_record(session, datastoreId=None, page=1, pageSize=100, startDate=None, endDate=None, status=None, id=None,
-               for_update=False):
+def get_record(session, account_id, datastoreId=None, page=1, pageSize=100, startDate=None, endDate=None, status=None,
+               id=None, for_update=False):
     """
+    :param account_id:
     :param datastoreId: 	A unique numeric identifier for the Datastore from which Records are being requested. [Required]
     :param page: 	        The page number of the Record results to view. If not specified, page will default to 1.
     :param pageSize: 	    The number of Records to include in the Record results, between 1 and 10000. If not specified, pageSize will default to 100.
@@ -33,7 +34,7 @@ def get_record(session, datastoreId=None, page=1, pageSize=100, startDate=None, 
     """
 
     if id is not None:
-        query = session.query(Record).filter(Record.id == id)
+        query = session.query(Record).filter(Record.accountId == account_id).filter(Record.id == id)
         if for_update:
             query.with_for_update()
         if len(query.all()) == 1:
@@ -41,7 +42,7 @@ def get_record(session, datastoreId=None, page=1, pageSize=100, startDate=None, 
         logging.error("Query for Record with ID %s returned %s results", id, len(query.all()))
         return None
     else:
-        query = session.query(Record)
+        query = session.query(Record).filter(Record.accountId == account_id)
         if datastoreId is not None:
             query = query.filter(Record.datastoreId == datastoreId)
         if startDate is not None:
@@ -68,7 +69,7 @@ def create_record(session, account_id, datastore_id, data, status=RecordState.QU
     ":return:                           The created record or None on failure
     """
 
-    ds = get_datastore(session, datastore_id)
+    ds = get_datastore(session, account_id, datastore_id)
     user = get_account(session, account_id)
     if ds is None:
         logging.error("DataStore %s does not exist!", datastore_id)
@@ -105,7 +106,7 @@ def create_record(session, account_id, datastore_id, data, status=RecordState.QU
     return rec
 
 
-def delete_record(session, record_id, do_commit=True):
+def delete_record(session, account_id, record_id, do_commit=True):
     """
 
     :param session:     The session to be used to communicate with the DB
@@ -113,7 +114,7 @@ def delete_record(session, record_id, do_commit=True):
     :param do_commit:   Whether to commit the deletion or not, defaults to True
     :return:            The deleted record or None if it did not exist
     """
-    record = get_record(session, id=record_id)
+    record = get_record(session, account_id, id=record_id)
 
     if record is not None:
         session.delete(record)

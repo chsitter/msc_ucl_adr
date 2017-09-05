@@ -4,8 +4,8 @@ from time import time
 
 from flask import request, abort
 
-import tierion.util
-from tierion import util
+import tierion
+from tierion import chainpoint_util
 
 
 def setup(app, session):
@@ -14,7 +14,9 @@ def setup(app, session):
     def accounts(account_name=None):
         if request.method == 'POST':
             account_data = request.json
-            tierion.create_account(session, account_data['name'], account_data['email'], account_data['full_name'], account_data['secret'])
+            user = tierion.create_account(session, account_data['name'], account_data['email'], account_data['full_name'], account_data['secret'])
+            if user is None:
+                abort(500, "Couldn't create account")
             return "Account created"
         elif request.method == 'GET':
             # TODO: Add in Authentication - username and password
@@ -36,9 +38,10 @@ def setup(app, session):
             name = account_data['name']
             secret = account_data['secret']
 
-            if tierion.login(session, name, secret):
-                # TODO: need to generate a token and return it to the user
-                return "Logged in"
+            login_ok, account_id = tierion.login(session, name, secret)
+            if login_ok:
+                user = tierion.get_account(session, account_id=account_id)
+                return user.json_describe()
             else:
                 abort(403, "Wrong password")
 
@@ -51,10 +54,10 @@ def setup(app, session):
 
         if request.method == 'GET':
             if datastore_id is None:
-                datastores = tierion.get_datastore(session)
+                datastores = tierion.get_datastore(session, account_id)
                 return json.dumps([json.loads(ds.json_describe()) for ds in datastores])
             else:
-                datastore = tierion.get_datastore(session, datastore_id)
+                datastore = tierion.get_datastore(session, account_id, datastore_id)
                 if datastore is None:
                     abort(404, "No datastore with ID " + datastore_id + " found")
                 return datastore.json_describe()
@@ -84,7 +87,7 @@ def setup(app, session):
             post_data_enabled, post_data_url = get_indicator_and_field("postDataEnabled", "postDataUrl")
             post_receipt_enabled, post_receipt_url = get_indicator_and_field("postReceiptEnabled", "postReceiptUrl")
 
-            datastore = tierion.create_datastore(session, name, groupname, redirect_enabled, redirect_url,
+            datastore = tierion.create_datastore(session, account_id, name, groupname, redirect_enabled, redirect_url,
                                                  email_notification_enabled, email_notification_address,
                                                  post_data_enabled, post_data_url, post_receipt_enabled,
                                                  post_receipt_url)
@@ -139,7 +142,7 @@ def setup(app, session):
 
         if request.method == "GET":
             if record_id is not None:
-                record = tierion.get_record(session, id=record_id)
+                record = tierion.get_record(session, account_id, id=record_id)
                 if record is None:
                     abort(404, "Record with ID {} not found".format(record_id))
                 else:
@@ -148,7 +151,7 @@ def setup(app, session):
                 if "datastoreId" not in request.args:
                     abort(401, "Required argument datastoreId missing")
                 datastore_id = int(request.args["datastoreId"])
-                datastore = tierion.get_datastore(session, datastore_id)
+                datastore = tierion.get_datastore(session, account_id, datastore_id)
                 if datastore is None:
                     abort(500, "No datasstore with ID {} found".format(datastore_id))
 
@@ -159,7 +162,7 @@ def setup(app, session):
                 startDate = int(request.args["startDate"] if "startDate" in request.args else "{}".format(int(datastore.timestamp.timestamp())))
                 endDate = int(time())
 
-                _records = tierion.get_record(session, datastoreId=datastore_id, page=page, pageSize=pageSize,
+                _records = tierion.get_record(session, account_id, datastoreId=datastore_id, page=page, pageSize=pageSize,
                                               startDate=startDate, endDate=endDate)
 
                 response = {
@@ -195,7 +198,7 @@ def setup(app, session):
             if record_id is None:
                 abort(401)
 
-            record = tierion.delete_record(session, record_id)
+            record = tierion.delete_record(session, account_id, record_id)
 
             if record is not None:
                 return record.json_describe()
@@ -218,7 +221,7 @@ def setup(app, session):
             abort(403, "User and API Key invalid")
 
         item = tierion.get_hashitem(session, item_id=receipt_id)
-        receipt = util.build_chainpoint_receipt(item)
+        receipt = chainpoint_util.build_chainpoint_receipt(item)
         return json.dumps(receipt)
 
     # @app.route('/api/v1/anchor/<int:dsid>', methods=['GET', 'POST'])

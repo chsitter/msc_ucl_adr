@@ -5,7 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.pool import StaticPool
-from tierion import util
+
+from tierion import chainpoint_util
 
 Base = declarative_base()
 engine = None
@@ -24,6 +25,7 @@ class Account(Base):
     last_token_time = Column(DateTime(timezone=True), nullable=True)
 
     records = relationship("Record", back_populates="owner")
+    datastores = relationship("DataStore", back_populates="owner")
 
     def __repr__(self):
         return "<Account(name='{}', fullname='{}', password='{}', last_token_time='{}')>".format(
@@ -58,6 +60,7 @@ class DataStore(Base):
     __tablename__ = 'datastore'
 
     id = Column(Integer, primary_key=True)
+    accountId = Column(Integer, ForeignKey("account.id"), nullable=False)
     key = Column(String)
     name = Column(String)
     groupName = Column(String)
@@ -72,6 +75,7 @@ class DataStore(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
     records = relationship("Record", back_populates="datastore")
+    owner = relationship("Account", back_populates="datastores")
 
     def __repr__(self):
         return "<DataStore(id='{}', key='{}', name='{}')>".format(self.id, self.key, self.name)
@@ -140,7 +144,7 @@ class Record(Base):
             "json": self.json,
             "sha256": self.hashitem.proof,
             "timestamp": "{}".format(int(self.timestamp.timestamp())),
-            "blockchain_receipt": util.build_chainpoint_receipt(self.hashitem)
+            "blockchain_receipt": chainpoint_util.build_chainpoint_receipt(self.hashitem)
         })
 
 

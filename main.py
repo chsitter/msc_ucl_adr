@@ -2,6 +2,7 @@ import logging
 
 from ethereum import utils
 from flask import Flask
+from flask_cors import CORS
 
 import flask_rest
 import tierion
@@ -62,6 +63,7 @@ if __name__ == "__main__":
     # confirm_thr = tierion.start_confirmation_thread(confirm_anchorings_callback, checking_interval=30)
 
     app = Flask(__name__)
+    CORS(app)
 
     flask_rest.setup(app, session)
     app.run(debug=True, use_reloader=False)

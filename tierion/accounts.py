@@ -3,6 +3,10 @@ import uuid
 
 import logging
 
+import sqlalchemy.exc
+import sys
+
+
 from tierion.db import Account
 
 
@@ -19,7 +23,12 @@ def create_account(session, name, email, full_name, secret, do_commit=True):
 
     session.add(user)
     if do_commit:
-        session.commit()
+        try:
+            session.commit()
+        except sqlalchemy.exc.SQLAlchemyError:
+            session.rollback()
+            logging.error("Error creating account: %s", sys.exc_info())
+            user = None
 
     return user
 
@@ -28,9 +37,9 @@ def get_account(session, account_id=None, account_name=None):
     query = session.query(Account)
 
     if account_id is not None:
-        query.filter(Account.id == account_id)
+        query = query.filter(Account.id == account_id)
     elif account_name is not None:
-        query.filter(Account.name == account_name)
+        query = query.filter(Account.name == account_name)
     else:
         logging.error("Can't query for ID and name, only one allowed")
         return None
@@ -46,7 +55,11 @@ def delete_account(session, account_id, do_commit=True):
     if account is not None:
         session.delete(account)
         if do_commit:
-            session.commit()
+            try:
+                session.commit()
+            except sqlalchemy.exc.SQLAlchemyError:
+                session.rollback()
+                logging.error("Error deleting account: %s", sys.exc_info())
 
     return account
 
@@ -69,10 +82,12 @@ def login(session, account=None, secret=None, api_key=None):
                 login_ok = acct.password_hash == hashlib.sha512(bytearray(secret + salt, 'utf-8')).hexdigest()
                 return login_ok, acct.id if login_ok else None
 
-            return False
         elif api_key is not None:
             res = session.query(Account).filter(Account.email == account).all()
             if len(res) == 1:
                 acct = res[0]
                 login_ok = acct.apiKey == api_key
                 return login_ok, acct.id if login_ok else None
+
+        return False, None
+

@@ -2,10 +2,10 @@ from tierion.accounts import *
 from tierion.db import DataStore
 
 
-def get_datastore(session, id=None):
+def get_datastore(session, account_id, id=None):
     logging.info("Getting %s", "all datastores" if id is None else "datastore {}".format(id))
 
-    query = session.query(DataStore)
+    query = session.query(DataStore).filter(DataStore.accountId == account_id)
     if id is not None:
         query = query.filter(DataStore.id == id)
 
@@ -20,7 +20,7 @@ def get_datastore(session, id=None):
         raise Exception("Somehow ID lookup returned more than 1 item")
 
 
-def create_datastore(session, name, group_name, redirect_enabled=False, redirect_url=None,
+def create_datastore(session, account_id, name, group_name, redirect_enabled=False, redirect_url=None,
                      email_notification_enabled=False,
                      email_notification_address=None, post_data_enabled=False, post_data_url=None,
                      post_receipt_enabled=False,
@@ -40,6 +40,7 @@ def create_datastore(session, name, group_name, redirect_enabled=False, redirect
     """
     ds = DataStore(
         key=str(uuid.uuid5(uuid.NAMESPACE_DNS, name)),
+        accountId=account_id,
         name=name,
         groupName=group_name,
         redirectEnabled=redirect_enabled,
@@ -57,7 +58,7 @@ def create_datastore(session, name, group_name, redirect_enabled=False, redirect
     return ds
 
 
-def update_datastore(session, id, name=None, group_name=None, redirect_enabled=None, redirect_url=None,
+def update_datastore(session, account_id, id, name=None, group_name=None, redirect_enabled=None, redirect_url=None,
                      email_notification_enabled=None,
                      email_notification_address=None, post_data_enabled=None, post_data_url=None,
                      post_receipt_enabled=None,
@@ -78,7 +79,7 @@ def update_datastore(session, id, name=None, group_name=None, redirect_enabled=N
     :return: The updated Datastore or None if no Datastore for the given ID could be found
     """
 
-    ds = get_datastore(session, id)
+    ds = get_datastore(session, account_id, id)
 
     if ds is not None:
         if name is not None:
@@ -108,7 +109,7 @@ def update_datastore(session, id, name=None, group_name=None, redirect_enabled=N
     return ds
 
 
-def delete_datastore(session, id, do_commit=True):
+def delete_datastore(session, account_id, id, do_commit=True):
     """
     Deletes and returns a datastore with a given ID from the database
     :param session: The database session to be used
@@ -117,7 +118,7 @@ def delete_datastore(session, id, do_commit=True):
     :return: The deleted datastore or None if it did not exist
     """
 
-    datastore = get_datastore(session, id)
+    datastore = get_datastore(session, account_id, id)
     if datastore is not None:
         session.delete(datastore)
 

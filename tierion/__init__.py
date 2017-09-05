@@ -17,7 +17,7 @@ from tierion.datastore import create_datastore, update_datastore, delete_datasto
 from tierion.db import Confirmation
 from tierion.record import create_record, delete_record, get_record, RecordState
 from tierion.hashitem import create_hashitem, get_hashitem
-from tierion.util import build_chainpoint_receipt
+from tierion.chainpoint_util import build_chainpoint_receipt
 
 
 def send_post_receipt(url, receipt):

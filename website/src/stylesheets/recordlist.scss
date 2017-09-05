@@ -1,0 +1,18 @@
+.documentList {
+  width: 100%;
+  max-width: 100%;
+
+  > thead > tr > th {
+    text-align: left;
+    vertical-align: bottom;
+    border-bottom: 2px solid black;
+  }
+}
+
+.disclosed {
+  color: black;
+}
+
+.acknowledged {
+  color: green;
+}
