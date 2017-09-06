@@ -1,6 +1,6 @@
 # OpenTierion
 
-Open Source implementation of the [Tierion](https://tierion.com/) platform, mimicking their REST API.
+Open Source implementation of the [Tierion](https://tierion.com/) platform, mimicking their REST API as well as a prototype implementation for a document discovery/disclosure tool implemented as part of my MSC project "Alternative Dispute Resolution Using Blockchain Technologies"
 
 ## Getting started
 This library is implemented in Python3 and relies on third party libraries for the REST Server as well as the blockchain integration. 
