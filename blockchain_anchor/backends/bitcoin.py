@@ -90,7 +90,8 @@ def make_raw_transaction(utxos, outputs):
 
 
 def sign_transaction(private_key_wif, raw_unsigned_transaction, utxos, outputs):
-    print(raw_unsigned_transaction)
+    # TODO: This should work but doesn't - need to figure out what's going on
+    logging.debug("Signing transaction: %s", raw_unsigned_transaction)
 
     private_key, compressed_pk = wif_to_private_key(private_key_wif)
     tx = bytearray.fromhex(raw_unsigned_transaction) + int(1).to_bytes(4, 'little')
@@ -163,28 +164,18 @@ class BitcoinIntegration(BlockchainIntegration):
             logging.error("No UTXO with enough money found")
             return None
 
-        print("building TX")
+        logging.debug("Got UTXOs: %s", utxos_enough_money)
         logging.info("Using UTXO: %s", utxos_enough_money[0])
-        print(utxos_enough_money[0])
 
-        output1 = {"satoshis": (utxos_enough_money[0]['amount'] * 100000000) - self._transaction_fee, "pubkeyScript": build_pay_to_pubkey_hash_script(self._change_addr)}
+        output1 = {"satoshis": (utxos_enough_money[0]['amount'] * 100000000) - self._transaction_fee,
+                   "pubkeyScript": build_pay_to_pubkey_hash_script(self._change_addr[2:])}
         output2 = {"satoshis": 0, "pubkeyScript": build_op_return_script(hex_data)}
 
         raw_unsigned_transaction = make_raw_transaction([utxos_enough_money[0]], [output1, output2])
 
-        # # TODO: this needs to be done offline, not via the rpc, but damn that's confusing
-        data = self._service._base_data.copy()
-        data["method"] = "signrawtransaction"
-        data["params"] = [
-            raw_unsigned_transaction
-        ]
-        data["id"] = self._op_count
-        self._op_count += 1
-
-        signed_transaction = self._service._send_post_request(data)['hex']
-        # signed_transaction = self._sign_transaction(raw_unsigned_transaction, [utxos_enough_money[0]], [output1, output2])
-        # print(signed_transaction)
-        # TODO: this is the end of the above TODO
+        signed_transaction = self._sign_transaction(raw_unsigned_transaction, [utxos_enough_money[0]],
+                                                    [output1, output2])
+        logging.debug("Signed TX: %s", signed_transaction)
         return self._service.send_raw_transaction(signed_transaction)
 
     def confirm(self, tx_hash):
@@ -197,10 +188,22 @@ class BitcoinIntegration(BlockchainIntegration):
         return None
 
     def _sign_transaction(self, raw_unsigned_transaction, inputs, outputs):
+        workaround = True  # TODO: Set this to false if signing offline is done
         if callable(self._privkey):
             tx = self._privkey(raw_unsigned_transaction)
         else:
-            tx = sign_transaction(self._privkey, raw_unsigned_transaction, inputs, outputs)
+            if workaround is True:
+                data = self._service._base_data.copy()
+                data["method"] = "signrawtransaction"
+                data["params"] = [
+                    raw_unsigned_transaction
+                ]
+                data["id"] = self._op_count
+                self._op_count += 1
+
+                tx = self._service._send_post_request(data)['hex']
+            else:
+                tx = sign_transaction(self._privkey, raw_unsigned_transaction, inputs, outputs)
 
         return tx
 
@@ -242,6 +245,7 @@ class BitcoindService(BitcoinService):
 
         data["method"] = "listunspent"
         data["id"] = self._op_count
+        data["addresses"] = [account[2:]]
         self._op_count += 1
 
         return self._send_post_request(data)

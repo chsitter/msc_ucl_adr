@@ -1,12 +1,80 @@
 \documentclass[12pt,msc,a4paper,oneside]{ucl_thesis}
-%\documentclass[12pt,mres,draft,a4paper,oneside]{ucl_thesis}
 
 \usepackage{graphicx}
 \usepackage{setspace}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{url}
+\usepackage{float}
 \usepackage{tabularx}
+\usepackage{listings}
+\usepackage{color}
+
+\newfloat{Code}{H}{myc}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+
+\lstdefinestyle{myPython} {
+    language=Python,
+    commentstyle=\itshape\color{codegray},
+    stringstyle=\ttfamily\color{codegray},
+    keywordstyle=\bfseries,
+    showstringspaces=false,
+    basicstyle=\small,
+    basewidth={0.5em, 0.5em},
+    breakatwhitespace=true,         
+    breaklines=true, 
+    frame=shadowbox,
+    captionpos=b,                    
+    tabsize=2,
+    morekeywords={False, True, utils, db, bitcoin, ethereum, None}
+}
+
+\lstdefinestyle{myJavascript} {
+    language=Java,
+    commentstyle=\itshape\color{codegray},
+    stringstyle=\ttfamily\color{codegray},
+    keywordstyle=\bfseries,
+    showstringspaces=false,
+    basicstyle=\small,
+    basewidth={0.5em, 0.5em},
+    breakatwhitespace=true,         
+    breaklines=true, 
+    frame=shadowbox,
+    captionpos=b,                    
+    tabsize=2,
+    morekeywords={False, True, utils, db, bitcoin, ethereum, None}
+}
+
+\lstdefinestyle{myBash} {
+    language=bash,
+    commentstyle=\itshape\color{codegray},
+    stringstyle=\ttfamily\color{codegray},
+    keywordstyle=\bfseries,
+    showstringspaces=false,
+    basicstyle=\small,
+    basewidth={0.5em, 0.5em},
+    breakatwhitespace=true,         
+    breaklines=true, 
+    frame=shadowbox,
+    captionpos=b,                    
+    tabsize=2,
+}
+
+\lstdefinestyle{adrReceipt} {
+    language=Python,
+    commentstyle=\itshape\color{codegray},
+    stringstyle=\ttfamily\color{codegray},
+    keywordstyle=\bfseries,
+    showstringspaces=false,
+    basicstyle=\tiny,
+    basewidth={0.5em, 0.5em},
+    breakatwhitespace=true,         
+    breaklines=true, 
+    frame=shadowbox,
+    captionpos=b,                    
+    tabsize=2,
+    morekeywords={False, True, utils, db, bitcoin, ethereum, None}
+}
 
 \DeclareMathOperator{\Btcstate}{S}
 \DeclareMathOperator{\Btctransaction}{T}
@@ -191,8 +259,11 @@ Initally Atlassian Jira was used as a project management platform, on which the 
 The Git source control facility hosted on the Atlassian Bitbucket infrastructure was used as the version control tool throughout the development process. The project was hosted as a private repository with access to the code granted to members of the original team.
 
 \subsection{Programming languages}
-%TODO: probably rewrite saying nodejs jada jada
-For the prototype Python 3 was chosen as the main programming language because of it's flexibility and vast module ecosystem that makes prototyping very fast. In addition to the core language features, the Python module repository provides a multitude of blockchain libraries that create abstractions over the typically low level native APIs. Because of their popularity, the vast community support and the availability of Python modules Bitcoin, detailed in section \ref{sec:background_bitcoin} and Ethereum, detailed in section \ref{sec:background_ethereum} were chosen.
+The prototype consists of two major components, an anchoring component that implements functionality to anchor data into blockchains and exposes this as a REST API and a website prototype that implements the later defined discovery process.
+For the back-end, Python 3 was chosen as the main programming language because of it's flexibility and vast module ecosystem that makes prototyping very fast. 
+For the front end, NodeJS and npm was used as the development platform, with the Webpack framework as a build tool and Facebooks React as the rendering and component library. This decision was made based on the popularity of the libraries and the vast amounts of documentation available.
+
+As actual Blockchain back-ends, Bitcoin and Ethereum were chosen due to their popularity and community support. The integration with Bitcoin is detailed in section \ref{sec:background_bitcoin} and Ethereum in section \ref{sec:background_ethereum}.
 
 \subsection{Public key cryptography}
 Public key cryptography, sometimes called asymmetric cryptography, is a system which makes use of two distinct keys, a public and a private key. The public key, $K$, can be widely distributed while the private key, $K^{-1}$ must be kept private, as the names suggest. These systems depend on mathematical properties that both keys can be generated easily, but it's computationally intractable to compute the private key, knowing only the public key and encrypted messages $\{m\}_K$. Additionally it is computationally not feasibly to compute $K^{-1}$ or $m$ knowing $\{m\}_K$. Formally, the public key cryptography interface can be defined as: \cite{BKarp}
@@ -554,7 +625,7 @@ The document management component that is exposed via a REST API equivalent to t
 
     \item \textbf{confirmation:} Chainpoint at the time of writing supported two endpoints, Bitcoin and Ethereum. A Confirmation in this context represents information about the transaction the document was anchored in. Multiple confirmations in combination with the HashItem they are associated with hold the information required to build a chainpoint receipt.
 \end{itemize}
-In addition to the document management exposed to users, the library is designed in a way, such that one account is used per backend - more about backend integration in section \ref{sec:opentierion_backends} - to anchor multiple documents across multiple datastores and users. This is done via a periodic check for document age and the number of documents pending anchoring. Once either of these thresholds, which are configurable in the API are exceeded, all pending documents are put into a merkle tree and this merkle tree's root is then anchored into the blockchain and associated with the documents referenced in it.
+In addition to the document management exposed to users, the library is designed in a way, such that one account is used per back-end - more about back-end integration in section \ref{sec:opentierion_backends} - to anchor multiple documents across multiple datastores and users. This is done via a periodic check for document age and the number of documents pending anchoring. Once either of these thresholds, which are configurable in the API are exceeded, all pending documents are put into a merkle tree and this merkle tree's root is then anchored into the blockchain and associated with the documents referenced in it.
 
 \subsection{OpenTierion REST API} \label{sec:opentierion_rest_api}
 The Tierion API is split into two separate REST APIs, a so called \texttt{Hash API} and a \texttt{Data API}. As compatibility with Tierion was one of the design goals, this open source implementation exposes an API mimicing this structure. Tables \ref{tab:opentierion_hash_api} and \ref{tab:opentierion_data_api} outline the API and operations supported by it. In addition to these APIs, a user API is exposed such that it is possible to manage user accounts via the API.
@@ -864,6 +935,261 @@ The official tierion API as of the time of writing has better defined error hand
 Key Management, one very important topic that was mostly neglected in this thesis needs to be investigated more and included into the prototype system, as otherwise any party will be able to deny they are the party that participated in a dispute, which must not be possible.
 
 The probably largest topic left for future research is negotiation and negotiation support in a system that can monitor the state of all disputes, impose penalties for delays as well as provide perfect secrecy of utility and preference constraints. One possible angle to address this is using so called zk-SNARKs as used in ZCash to proof that a resolution exists. 
+
+
+\addcontentsline{toc}{chapter}{Appendices}
+\appendix
+\chapter{Building and running the project}\label{appendix:build_and_run}
+In this chapter a brief description as to how the project can be compiled and run is provided. The implementation consists of two separate servers, a Python back-end implementation exposing the REST API and a NodeJS based front end implementation as the disclosure prototype website.
+
+\section{Running the anchoring service}
+The anchoring service is written in Python3 and is started via the main entry point \texttt{main.py}. In order to run the server, the source code needs to be changed to point to either a valid Bitcoin installation or a valid Ethereum installation, details on how this is done are outlined in section \ref{sec:configure_bc_integration}. The server itself is then started with the following commands in the top-level of the project:
+\begin{Code}
+\begin{lstlisting}[style=myBash, caption=Set-up and run anchoring server]
+pip3 install -r requirements.txt
+python3 main.py
+\end{lstlisting}
+\end{Code}
+
+\section{Running a local Ethereum test node}
+The easiest way to get started is to set-up a local Ethereum test node using the official \texttt{geth} server. The official Ethereum documentation on \url{http://ethdocs.org/en/latest/network/test-networks.html} provides a detailed explanation on how this can be configured. The node is then started via the command:
+\begin{Code}
+\begin{lstlisting}[style=myBash, caption=Starting Ethereum test node]
+geth --rpc --rpcport "8079" --rpccorsdomain "*" --datadir "/tmp/eth/." --port "30303" --networkid 123
+\end{lstlisting}
+\end{Code}
+\noindent When the node is configured and running, a console needs to be attached to it to create an account and start mining. This is done via:
+\begin{Code}
+\begin{lstlisting}[style=myBash, caption=Start Ethereum test node mining]
+geth attach /tmp/eth/geth.ipc 
+    > personal.newAccount("password")
+    > miner.setEtherbase(eth.accounts[0])
+    > miner.start()
+\end{lstlisting}
+\end{Code}
+
+\section{Running a local Bitcoin regtest node}
+Similarly to Ethereums geth, Bitcoins bitcoind can be run in a test mode which makes testing very easy. To this extent a local installation of bitcoind is required and needs to be configured as described on the official documentation: \url{https://bitcoin.org/en/developer-examples#regtest-mode}. The bitcoin node is then started using the command:
+\begin{Code}
+\begin{lstlisting}[style=myBash, caption=Starting Ethereum regtest node]
+bitcond -regtest
+\end{lstlisting}
+\end{Code}
+\noindent It is then necessary to find the private and public key, which can be exported into a wallet.txt file as well as mine blocks manually. This can be done via a provided command line client using the commands:
+\begin{Code}
+\begin{lstlisting}[style=myBash, caption=Start Bitcoin regtest mining]
+bitcoin-cli -regtest dumpwallet wallet.txt
+bitcoin-cli -regtest generate 101
+\end{lstlisting}
+\end{Code}
+
+\section{Running the website prototype}
+The webpage is written using \texttt{NodeJS}, \texttt{npm}, \texttt{Webpack} and \texttt{React}. To build and run the website, install NodeJS and npm, navigate to the folder \texttt{website} in the source repository and run the following commands:
+\begin{Code}
+\begin{lstlisting}[style=myBash, caption=Set-up and run the website]
+npm install
+npm run start
+\end{lstlisting}
+\end{Code}
+\noindent where the first command installs all required packages, and the second one compiles the project using Webpack and starts a development server that hosts the website which will be accessible on \url{localhost:8080}
+
+\chapter{Anchoring library} \label{appendix:anchoring_snippets}
+In this chapter a description of the most crucial code parts of the implementation of the blockchain anchoring service that imitates the Tierion API is illustrated and explained.
+
+\section{Configuring Blockchain integrations} \label{sec:configure_bc_integration}
+The file main.py serves two purposes, configuring and connecting the components as well as starting the service. Listing \ref{lst:anchor_config} illustrates the configuration required to integrate with any Ethereum and Bitcoin network.
+\begin{Code}
+\begin{lstlisting}[style=myPython, caption=Configuration example main.py, label=lst:anchor_config]
+eth_privkey = "32b4c7dc7c2c26d983a5ddeeb65e35b1f18e0148e30fe1ee58cd" \ "56bf7a0e5c1e"
+eth_acct = utils.decode_addr(utils.privtoaddr(eth_privkey))
+eth_svc = ethereum.Web3EthereumService("http://127.0.0.1:8079")
+eth = ethereum.EthereumIntegration(eth_privkey, eth_acct, eth_svc)
+
+btc_privkey = "mmEXEzUGcMmmiLsfxxM8gB8TQSTkuR1drf"
+btc_acct = "cTyF9pebH3kwwzUt5gzaxSDQ1DbqYfx4P1i4d1TyjtSDEeUFgYsk"
+btc_svc = bitcoin.BitcoindService("localhost", 18332, "bitcoinrpc", "c8805869db20730a2ddb7f62cfa2745c")
+btc = bitcoin.BitcoinIntegration(btc_privkey, btc_acct, btc_svc)
+
+# eth = None    # disable eth
+btc = None  # disable btc
+\end{lstlisting}
+\end{Code}
+
+\section{Adding additional service integrations}
+In the previous section, Bitcoin as well as Ethereum integrations are configured as illustrated in listing \ref{lst:anchor_config}. The example integrates with a local \texttt{bitcoind} or \texttt{geth} process, in some cases however integrating with a third party service is preferrable such that the requirement for a local node no longer exists. This is done by implementing one of the interfaces shown in \ref{lst:bitcoin_svc} for bitcoin or \ref{lst:ethereum_svc} for Ethereum and using these instead of the ones provided.
+
+\begin{Code}
+\begin{lstlisting}[style=myPython, caption=Bitcoin Service Interface, label=lst:bitcoin_svc]
+class BitcoinService:
+    def get_unspent_outputs(self, account: object) -> list:
+        pass
+
+    def send_raw_transaction(self, transaction_hex):
+        pass
+
+    def get_transaction_receipt(self, transaction_id):
+        pass
+\end{lstlisting}
+\end{Code}
+
+\begin{Code}
+\begin{lstlisting}[style=myPython, caption=Ethereum Service Interface, label=lst:ethereum_svc]
+class EthereumService:
+    def get_transaction_count(self, account):
+        pass
+
+    def send_raw_transaction(self, transaction_hex):
+        pass
+
+    def get_transaction_receipt(self, transaction_id):
+        pass
+\end{lstlisting}
+\end{Code}
+
+\section{Wire up integrations with anchoring service} 
+The blockchain integration as well as the anchoring service that mimics the service provided by Tierion are designed as two independent components. This way new blockchain integrations can easily be added to the system. Wiring up the two components is illustrated in listing \ref{lst:anchor_wiring_up}. In the listing, the configuration says that anchoring is done when there are more than 3 documents pending anchoring and the check is performed every 30 seconds. Additionally two endpoints are defined and anchoring in at least one must succeed.
+
+\begin{Code}
+\begin{lstlisting}[style=myPython, caption=Wiring up integration with service, label=lst:anchor_wiring_up]
+def anchor_documents_callback(merkle_root):
+    eth_tx_id = eth.anchor(merkle_root) if eth is not None else None
+    btc_tx_id = btc.anchor(merkle_root) if btc is not None else None
+    if eth_tx_id is not None or btc_tx_id is not None:
+        endpoints = []
+        if eth is not None:
+            endpoints.append(("ETHData", eth_tx_id))
+        if btc is not None:
+            endpoints.append(("BTCOpReturn", btc_tx_id))
+        return endpoints
+    return None
+
+anchor_thr = tierion.start_anchoring_timer(anchor_documents_callback, queue_max_size=3, checking_interval=30)
+\end{lstlisting}
+\end{Code}
+
+\section{Example REST Endpoint}
+The file \texttt{flask\_rest.py} contains the code that exposes the anchoring library via a REST service using Python and Flask. Listing \ref{lst:anchor_rest_example} illustrates a simple REST endpoint the API supports. 
+\begin{Code}
+\begin{lstlisting}[style=myPython, caption=Example REST Endpoint - HashItem, label=lst:anchor_rest_example]
+ @app.route('/api/v1/hashitems', methods=['POST'])
+    def hashitems():
+        login_ok, acct_id = tierion.login(session, account=request.headers["X-Username"], api_key=request.headers["X-Api-Key"])
+        if login_ok is not True:
+            abort(403, "User and API Key invalid")
+
+        hex_data = request.json["hash"]
+        item = tierion.create_hashitem(session, acct_id, hex_data)
+        return item.json_describe()
+\end{lstlisting}
+\end{Code}
+\noindent It is possible to use the REST Service using e.g. the command line utility \texttt{curl} by running the command shown in listing \ref{lst:anchor_rest_client}
+\begin{Code}
+\begin{lstlisting}[style=myBash, caption=Example REST Endpoint - client, label=lst:anchor_rest_client]
+curl -X POST -H "Content-Type: application/json" \ 
+-H "X-Username: tester@test.net" -H "X-Api-Key: <api_key>" \ 
+-d '{"hash":"<sha256 hash>"}' http://127.0.0.1:5000/api/v1/hashitems
+\end{lstlisting}
+\end{Code}
+
+
+\chapter{Disclosure prototype} \label{appendix:website}
+In this chapter, a brief explanation of the disclosure prototype as well as code snippets for some crucial parts are provided. The disclosure prototype is written as a single page web application using \texttt{NodeJS}, \texttt{Webpack} and \texttt{React} with all components of the prototype realised as React components for reusability. Figure \ref{fig:proto_landing_page} shows the landing page of the prototype and the subsequent sections work through the disclosure workflow as illustrated in figure \ref{fig:disclosure_state_machine}.
+
+\begin{figure}[H]
+    \includegraphics[width=1.0\textwidth]{./figures/proto_landing_page.png}
+    \caption{Disclosure prototype landing page}
+    \label{fig:proto_landing_page}
+\end{figure}
+
+\section{Starting a new dispute}
+In the prototype, every dispute is represented by an account and it is hence required to create an account prior to disclosing documents. The credentials must be known to all participating parties. Figure \ref{fig:proto_register} shows the registration page which, upon successful registration redirects to the login page detailed in the next section.
+
+\begin{figure}[H]
+    \includegraphics[width=1.0\textwidth]{./figures/proto_register.png}
+    \caption{Disclosure prototype registration}
+    \label{fig:proto_register}
+\end{figure}
+
+\section{Resuming a dispute}
+After registration and also to resume a previously started dispute, it is required to log-in with the credentials specified. This is done on the login page shown in figure \ref{fig:proto_login}.
+
+\begin{figure}[H]
+    \includegraphics[width=1.0\textwidth]{./figures/proto_login.png}
+    \caption{Disclosure prototype login}
+    \label{fig:proto_login}
+\end{figure}
+
+\section{Disclosing documents}
+After a successful login, the user is redirected to the disclosure page that allows parties to disclose documents as well as acknowledge their receipt using the REST API of the Blockchain integration service and public/private key cryptography using Elliptic curves. Figure \ref{fig:proto_disclose} illustrates how a document is disclosed on the left-hand side input area by providing a title, selecting a file to be uploaded and specifying an elliptic curve private key in JSON Web Key format\footnote{jwk - \url{https://tools.ietf.org/html/rfc7517} - is used because of the still incomplete support for other formats by the WebCrypto API}. Once all required information is specified, the document is sent to the service and will eventually be anchored into the blockchain. More about anchoring and receipts later.
+\begin{figure}[H]
+    \includegraphics[width=1.0\textwidth]{./figures/proto_disclose.png}
+    \caption{Disclosure prototype document disclosure}
+    \label{fig:proto_disclose}
+\end{figure}
+\noindent Once Documents are disclosed and if the dispute setting requires it, the receipt of a disclosed document can be acknowledged using the input area on the right-hand side. To acknowledge the receipt of a document, a party needs to provide the Document ID as well as their private key for signing, again in jwk format. Clicking on the Acknowledge button then creates a new document and uploads it for anchoring. For visual confirmation, acknowledged documents are automatically highlighted in green as illustrated in figure \ref{fig:proto_acknowlege}.
+\begin{figure}[H]
+    \includegraphics[width=1.0\textwidth]{./figures/proto_acknowledge.png}
+    \caption{Disclosure prototype document acknowledgement}
+    \label{fig:proto_acknowlege}
+\end{figure}
+
+\section{Generating ADR Receipts}
+To generate an ADR Receipt, a user clicks on the Receipt button to the right of each document. A click on this button then alerts the receipt as defined by Equation \ref{eq:disclosure_receipt} as a JSON object that can then further be processed or formatted. An example receipt is illustrated in listing \ref{lst:example_receipt}. It is important to note that the anchoring system does not anchor documents immediately but waits for several documents to be queued up such that they can be anchored into one transaction. To this extent, the properties \texttt{merkleRoot}, \texttt{proof} and \texttt{anchors} will be \texttt{0x0} or empty until anchoring is done. The below listing obviously is a receipt for an already document.
+\begin{Code}
+\begin{lstlisting}[style=adrReceipt, caption=Example ADR Receipt, label=lst:example_receipt]
+[
+   {
+      "@context":"https://w3id.org/chainpoint/v2",
+      "type":"ChainpointSHA256v2",
+      "targetHash":"4989ed711bbb6be4518e725be0047b38ae149b45b773726e27cebfe5347b89d9",
+      "merkleRoot":"a71f0d96225445e68e8f1071fc6538152aeeeed66d922f9fe0a4a7275f157b26",
+      "proof":[
+         {"left":"67ca7d519fce42f271b83514d74c18b43c3dbd3102f7915fc13bd22715ccf963"},
+         {"left":"779535264eca73edf936a4096c7f52b1fb87e81e00c76fc68d382788a873dc3c"},
+         {"right":"939a7805098d2f6724730776bede581249611b833f0257d5616dfbb3383f50d7"}
+      ],
+      "anchors":[
+         {
+            "type":"ETHData",
+            "sourceId":"2c76984e81bb4f9bff558e750e004203641f9c3dc39e4c93b52846178cbd9d4a"
+         }
+      ]
+   },
+   {
+      "title":"Exhibit B",
+      "data":"U2Vjb25kIHRlc3QgZmlsZQ==",
+      "signature":"rdOhzZ1ydxhp8tmGHKr363zxeksL4lN4lquCq8vlMROeuVMeb2B4wVD2RYB1K/Qbk1AorIf+/UoJAAiP76/cWA==",
+      "pubkey":"{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"JOWAdwUcjO1XkVs4ODoGERQTnd_9tBJJ2BZMLICI0FM\", \"y\":\"B7TQnpt-JoWVNSY5IB5SIlpZOwmadzm15ng8ADE4H58\",\"ext\":true}"
+   }
+]
+\end{lstlisting}
+\end{Code}
+
+\section{Cryptographic signatures of documents}
+As defined in chapter \ref{chapter:anchoring_data_into_the_blockchain} cryptographic signatures are used to create a micro-transaction abstraction over blockchains such that the requirement for a specific blockchain technology can be eliminated. To this extent, a document as well as an acknowledgement contains a cryptographic signature. Listing \ref{lst:document_signature} illustrates how the signature for a document is generated offline in a browser using the new JavaScript WebCrypto API. The signature is formed from the concatenation of the \texttt{title}, the base64 encoded \texttt{data} and the \texttt{pubkey} as a JSON string.
+
+\begin{Code}
+\begin{lstlisting}[style=myJavascript, caption=Document generation and signing in JavaScript, label=lst:document_signature]
+let reader = new FileReader();
+...
+window.crypto.subtle.importKey("jwk", privkey,
+    { name: "ECDSA", namedCurve: "P-256"},
+    true, ["sign"]
+).then(function (key) { reader.onloadend = function (evt) {
+    let fileContent = evt.target.result;
+    let data = btoa(String.fromCharCode.apply(null, new Uint8Array(fileContent)));
+    let signData = new TextEncoder('utf-8').encode(title + data + pubkey);
+    window.crypto.subtle.sign({name: "ECDSA", hash: {name: "SHA-256"}}, key, signData).then(function (signature) {
+        //Send document to anchor service
+    })
+};
+reader.readAsArrayBuffer(file);
+\end{lstlisting}
+\end{Code}
+
+\chapter{Colophon} \label{appendixlabel3}
+This document was written based on the template available on \url{https://www.sharelatex.com/templates/thesis/university-college-london-thesis} using \LaTeX\ and Bib\TeX  and composed with the VIM text editor and latexmk. 
+
 
 \bibliographystyle{unsrt}
 \bibliography{bibliography}

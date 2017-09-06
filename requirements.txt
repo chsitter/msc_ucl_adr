@@ -13,3 +13,4 @@ web3==3.8.1
 Werkzeug==0.12.2
 base58==0.2.5
 ecdsa==0.13
+bitcoin==1.1.42

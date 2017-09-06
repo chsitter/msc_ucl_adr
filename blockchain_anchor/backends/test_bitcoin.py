@@ -1,9 +1,9 @@
 import hashlib
+import logging
 from unittest import TestCase
 from uuid import uuid4
 
 import base58
-from bitcoin import privtoaddr
 
 from blockchain_anchor.backends.bitcoin import BitcoinIntegration, BitcoindService, make_raw_transaction, \
     build_pay_to_pubkey_hash_script, build_op_return_script, wif_to_private_key
@@ -11,7 +11,8 @@ from blockchain_anchor.backends.bitcoin import BitcoinIntegration, BitcoindServi
 
 class TestBitcoinIntegration(TestCase):
     def setUp(self):
-        # btc = BitcoinIntegration("localhost", 18332, "bitcoinrpc", "c8805869db20730a2ddb7f62cfa2745c", "mqCnowcw6K24bqD4Xcio3iync1ziWXEqio")
+        logging.basicConfig(level=logging.DEBUG)
+
         self.host = "localhost"
         self.port = 18332
         self.account = "mmEXEzUGcMmmiLsfxxM8gB8TQSTkuR1drf"
@@ -20,18 +21,13 @@ class TestBitcoinIntegration(TestCase):
         self.rpc_user = "bitcoinrpc"
         self.svc = BitcoindService(self.host, self.port, self.rpc_user, self.secret)
 
-    def test_foo(self):
-        print(wif_to_private_key(self.privkey))
-        print(self.account)
-        print(privtoaddr(self.privkey))
-
     def test_wif_to_privkey(self):
         k = wif_to_private_key("5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ")
         self.assertEqual(k.upper(), "0C28FCA386C7A227600B2FE50B7CAE11EC86D3BF1FBE471BE89827E19D72AA1D")
 
     def test_anchor(self):
         test_merkle_root = hashlib.sha256(uuid4().bytes).hexdigest()
-        btc = BitcoinIntegration(self.privkey, self.account, self.svc, self.account)
+        btc = BitcoinIntegration(self.privkey, self.account, self.svc)
 
         print(btc.anchor(test_merkle_root))
 
@@ -40,23 +36,6 @@ class TestBitcoinIntegration(TestCase):
         btc = BitcoinIntegration(self.privkey, self.account, self.svc, self.account)
 
         print(btc.confirm(txid))
-
-    def test_raw_transaction(self):
-        unspent_outputs = self.svc.get_unspent_outputs(self.account)
-
-        print(unspent_outputs[0])
-        data = self.svc._base_data.copy()
-        data["method"] = "createrawtransaction"
-        data["params"] = [
-            [{"txid": unspent_outputs[0]["txid"], "vout": unspent_outputs[0]["vout"]}],
-            {
-                # TODO: need to figure out how many decimals etc etc
-                self.account: "{:.4f}".format(5)
-            }
-        ]
-        data["id"] = 42
-
-        print(self.svc._send_post_request(data))
 
     def test_base58stuff(self):
         real = base58.b58decode_check(self.account)

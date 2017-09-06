@@ -204,14 +204,31 @@ export default class Disclosure extends Component {
     }
 
     buildAdrReceipt(record) {
-        if ("recordId" in record.data) {
-            let tmp = JSON.parse(JSON.stringify(record.data));
-            tmp["document"] = this.state.recordsDisclose[tmp.recordId].data;
-            delete tmp["recordId"];
-            alert(JSON.stringify([record.blockchain_receipt, tmp]))
-        } else {
-            alert(JSON.stringify([record.blockchain_receipt, record.data]))
-        }
+
+        let xhttp = new XMLHttpRequest();
+        let _this = this;
+        xhttp.open("GET", "http://localhost:5000/api/v1/records/" + record.id, true);
+        xhttp.setRequestHeader("X-Username", this.user);
+        xhttp.setRequestHeader("X-Api-Key", this.apiKey);
+        xhttp.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                if (this.status === 200) {
+                    let record = JSON.parse(this.responseText);
+                    if ("recordId" in record.data) {
+                        let tmp = JSON.parse(JSON.stringify(record.data));
+                        tmp["document"] = _this.state.recordsDisclose[tmp.recordId].data;
+                        delete tmp["recordId"];
+                        alert(JSON.stringify([record.blockchain_receipt, tmp]))
+                    } else {
+                        alert(JSON.stringify([record.blockchain_receipt, record.data]))
+                    }
+                } else {
+                    alert(this.response)
+                }
+            }
+        };
+
+        xhttp.send();
     }
 
 
