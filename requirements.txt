@@ -12,5 +12,5 @@ urllib3==1.21.1
 web3==3.8.1
 Werkzeug==0.12.2
 base58==0.2.5
-ecdsa==0.13
+ecdsa==0.13.3
 bitcoin==1.1.42
