@@ -2,7 +2,7 @@ ethereum==2.0.4
 ethereum-abi-utils==0.4.0
 ethereum-utils==0.2.0
 Flask==0.12.2
-flask-cors==3.0.3
+flask-cors==3.0.9
 merkletools==1.0.2
 pyethash==0.1.27
 pysha3==1.0.2
